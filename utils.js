@@ -316,7 +316,7 @@ function regenPrimeList(end) {
 	// var primes = [2,3,5];
 	// var primeMap = {2:1,3:1,5:1};
 	// var maxPrime = 5;
-	for(var i = maxPrime + 2; i < 1e6; i+=2) {
+	for(var i = maxPrime + 2; i < end; i+=2) {
 		if(isPrime(i)) primes.push(i);
 	}
 	print("var primes = [");
@@ -369,3 +369,12 @@ function isPalindrome(x) {
 	}
 	return true;
 }
+
+var op = {};
+op.add = op['+'] = function(a,b) { return a+b; }
+op.sub = op['-'] = function(a,b) { return a-b; }
+op.mul = op['*'] = function(a,b) { return a*b; }
+op.div = op['/'] = function(a,b) { return a/b; }
+op.num = function(a) { return +a; }
+op.neg = function(a) { return -a; }
+op.str = function(a) { return a+''; }
