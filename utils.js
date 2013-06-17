@@ -404,6 +404,7 @@ function isValidSquarePath(point, path, rows, cols) {
 }
 
 function Bignum(num) {
+	if(!(this instanceof Bignum)) return new Bignum(num);
 	if(num === undefined) num = "0";
 	if(typeof num == "number" || num instanceof Number)
 		return new Bignum(num+'');
@@ -414,24 +415,26 @@ function Bignum(num) {
 	if(num instanceof Bignum)
 		this.digits = num.digits;
 }
+Bignum.base = 10;
 Bignum.prototype.add = function(that) {
 	that = new Bignum(that);
-	var len = Math.max(this.digits.length, that.digits.length);
+	var maxlen = Math.max(this.digits.length, that.digits.length);
 	var minlen = Math.min(this.digits.length, that.digits.length);
-	var bigger = this.digits.len == len ? this : that;
+	var bigger = this.digits.length == maxlen ? this : that;
 	var arr = [];
 	var carry = 0;
 	for(var i = 0; i < minlen; i++) {
 		var result = this.digits[i] + that.digits[i] + carry;
-		arr.push(result%10);
-		carry = Math.floor(result/10);
+		arr.push(result%Bignum.base);
+		carry = Math.floor(result/Bignum.base);
 	}
-	for(; i < len; i++) {
+	for(; i < maxlen; i++) {
 		var result = bigger.digits[i] + carry;
-		arr.push(result%10);
-		carry = Math.floor(result/10);
+		arr.push(result%Bignum.base);
+		carry = Math.floor(result/Bignum.base);
 	}
-	return new Bignum(arr);
+	if(carry > 0) arr.push(carry);
+	return new Bignum(arr.reverse());
 }
 Bignum.prototype.toString = function() {
 	return this.digits.reverse().join('');
