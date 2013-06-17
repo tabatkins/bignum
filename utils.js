@@ -426,28 +426,32 @@ function Bignum(num) {
 		this.digits = num.digits;
 }
 Bignum.base = 10;
+Object.defineProperty(Bignum.prototype, "length", {
+	get: function() { return this.digits.length; }
+});
 Bignum.prototype.add = function(that) {
 	that = new Bignum(that);
-	var maxlen = Math.max(this.digits.length, that.digits.length);
-	var minlen = Math.min(this.digits.length, that.digits.length);
-	var bigger = this.digits.length == maxlen ? this : that;
-	var arr = [];
+	var len = Math.max(this.length, that.length);
+	for(var i = 0; i < len; i++) {
+		this.digits[i] = (this.digits[i]||0) + (that.digits[i]||0);
+	}
+	return this.normalize();
+}
+Bignum.prototype.normalize = function() {
 	var carry = 0;
-	for(var i = 0; i < minlen; i++) {
-		var result = this.digits[i] + that.digits[i] + carry;
-		arr.push(result%Bignum.base);
-		carry = Math.floor(result/Bignum.base);
+	for(var i = 0; i < this.length; i++) {
+		var digit = this.digits[i] + carry;
+		carry = Math.floor(digit / Bignum.base);
+		this.digits[i] = digit % Bignum.base;
 	}
-	for(; i < maxlen; i++) {
-		var result = bigger.digits[i] + carry;
-		arr.push(result%Bignum.base);
-		carry = Math.floor(result/Bignum.base);
+	while(carry > 0) {
+		this.digits.push(carry % Bignum.base);
+		carry = Math.floor(carry / Bignum.base);
 	}
-	if(carry > 0) arr.push(carry);
-	return new Bignum(arr.reverse());
+	return this;
 }
 Bignum.prototype.toString = function() {
-	return this.digits.reverse().join('');
+	return this.digits.slice().reverse().join('');
 }
 
 
