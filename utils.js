@@ -273,17 +273,24 @@ Factors.prototype.of = function(x, startIndex) {
 }
 Factors.prototype.toNum = function() {
 	var product = 1;
-	this.forEach(function(v,k) {
-		product *= Math.pow(k, v);
+	this.forEach(function(e,b) {
+		product *= Math.pow(b, e);
 	});
 	return product;
 }
 Factors.prototype.toString = function() {
 	var arr = [];
-	this.forEach(function(v,k) {
-		arr.push(k+"^"+v);
+	this.forEach(function(e,b) {
+		arr.push(b+"^"+e);
 	});
 	return arr.join(' * ');
+}
+Factors.prototype.countDivisors = function() {
+	var count = 1;
+	this.forEach(function(e,b) {
+		count *= e+1;
+	});
+	return count;
 }
 
 function isPrime(x) {
