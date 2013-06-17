@@ -123,6 +123,16 @@ Map.prototype.forEach = function(func) {
 		func.call(this, this._data[k], k);
 	}
 }
+Map.prototype.reduce = function(func, accum) {
+	this.forEach(function(v,k) {
+		if(accum === undefined) {
+			accum = v;
+			return;
+		}
+		accum = func(accum, v, k);
+	});
+	return accum;
+}
 Map.prototype.keys = function() {
 	var arr = [];
 	this.forEach(function(v,k){ arr.push(k); });
@@ -438,4 +448,19 @@ Bignum.prototype.add = function(that) {
 }
 Bignum.prototype.toString = function() {
 	return this.digits.reverse().join('');
+}
+
+
+function memoize(func) {
+	var memo = new Map();
+	var newfunc = function() {
+		var args = [].slice.call(arguments);
+		if(memo.has(args))
+			return memo.get(args);
+		var result = func.apply(this, args);
+		memo.set(args, result);
+		return result;
+	}
+	newfunc.memo = memo;
+	return newfunc;
 }
