@@ -402,3 +402,37 @@ function isValidSquarePath(point, path, rows, cols) {
 	}
 	return true;
 }
+
+function Bignum(num) {
+	if(num === undefined) num = "0";
+	if(typeof num == "number" || num instanceof Number)
+		return new Bignum(num+'');
+	if(typeof num == "string" || num instanceof String)
+		this.digits = num.split('').reverse().map(op.num);
+	if(num instanceof Array)
+		this.digits = num.reverse();
+	if(num instanceof Bignum)
+		this.digits = num.digits;
+}
+Bignum.prototype.add = function(that) {
+	that = new Bignum(that);
+	var len = Math.max(this.digits.length, that.digits.length);
+	var minlen = Math.min(this.digits.length, that.digits.length);
+	var bigger = this.digits.len == len ? this : that;
+	var arr = [];
+	var carry = 0;
+	for(var i = 0; i < minlen; i++) {
+		var result = this.digits[i] + that.digits[i] + carry;
+		arr.push(result%10);
+		carry = Math.floor(result/10);
+	}
+	for(; i < len; i++) {
+		var result = bigger.digits[i] + carry;
+		arr.push(result%10);
+		carry = Math.floor(result/10);
+	}
+	return new Bignum(arr);
+}
+Bignum.prototype.toString = function() {
+	return this.digits.reverse().join('');
+}
