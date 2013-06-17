@@ -378,3 +378,13 @@ op.div = op['/'] = function(a,b) { return a/b; }
 op.num = function(a) { return +a; }
 op.neg = function(a) { return -a; }
 op.str = function(a) { return a+''; }
+
+function isValidSquarePath(point, path, rows, cols) {
+	for(var i in path) {
+		var p = path[i];
+		var n = [point[0]+p[0], point[1]+p[1]];
+		if(n[0] < 0 || n[1] < 0 || n[0] >= rows || n[1] >= cols)
+			return false;
+	}
+	return true;
+}
