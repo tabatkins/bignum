@@ -278,6 +278,13 @@ Factors.prototype.toNum = function() {
 	});
 	return product;
 }
+Factors.prototype.toString = function() {
+	var arr = [];
+	this.forEach(function(v,k) {
+		arr.push(k+"^"+v);
+	});
+	return arr.join(' * ');
+}
 
 function isPrime(x) {
 	if(x <= maxPrime) return !!primeMap[x];
