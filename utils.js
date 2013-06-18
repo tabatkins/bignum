@@ -413,21 +413,81 @@ function isValidSquarePath(point, path, rows, cols) {
 	return true;
 }
 
-function Bignum(num) {
-	if(!(this instanceof Bignum)) return new Bignum(num);
-	if(num === undefined) num = "0";
-	if(typeof num == "number" || num instanceof Number)
-		return new Bignum(num+'');
-	if(typeof num == "string" || num instanceof String)
-		this.digits = num.split('').reverse().map(op.num);
-	if(num instanceof Array)
-		this.digits = num.reverse();
-	if(num instanceof Bignum)
-		this.digits = num.digits;
+function Bignum(num, base) {
+	if(!(this instanceof Bignum)) return new Bignum(num, base);
+	if(num === undefined) num = 0;
+	if(base === undefined) base = num.base || Bignum.defaultBase;
+	this.base = base;
+
+	if(typeof num == "number" || num instanceof Number) {
+		if(num < 0) {
+			var neg = true;
+			num *= -1;
+		}
+		this.digits = [];
+		do {
+			this.digits.push(num % Bignum.innerBase);
+			num = Math.floor(num / Bignum.innerBase);
+		} while(num > 0);
+		if(neg) {
+			this.digits = this.digits.map(op.neg);
+		}
+	} else if(num instanceof Array) {
+		var digits = num.slice().reverse();
+		// First, collect input digits together into a larger base,
+		// as large as I can get without overshooting innerBase,
+		// for better efficiency (less steps later).
+		// Then, just use Bignum math to do the conversion for me;
+		// nothing particularly clever going on here.
+		var size = Math.floor(Math.log(Bignum.innerBase) / Math.log(base));
+		var bigDigits = Math.ceil(digits.length / size);
+		var pieces = [];
+		for(var i = 0; i < bigDigits; i++) {
+			var offset = i*size;
+			var sum = 0;
+			for(var j = 0; j < size; j++) {
+				sum += (digits[offset+j]||0) * Math.pow(base, j);
+			}
+			pieces.push(Bignum(sum).mul(Bignum(base).pow(offset)));
+		}
+		return pieces.reduce(function(a,b){return a.add(b);}, Bignum(0));
+	} else if(typeof num == "string" || num instanceof String) {
+		if(num[0] == -1) {
+			var neg = true;
+			num = num.slice(1);
+		}
+		var digits = num.split('').map(function(x){return parseInt(x,base);});
+		if(neg) {
+			digits = digits.map(op.neg);
+		}
+		return new Bignum(digits, base);
+	} else if(num instanceof Bignum) {
+		this.digits = num.digits.slice();
+	} else {
+		throw TypeError("Can't understand type of first argument.");
+	}
+	return this.normalize();
 }
-Bignum.base = 10;
+Bignum.fromDigits = function(digits) {
+	// This function does nothing intelligent.
+	// It assumes that the digit array is in innerBase already.
+	var result = new Bignum(0);
+	result.digits = digits;
+	return result;
+}
+Bignum.innerBase = Math.pow(2,25);
+Bignum.defaultBase = 10;
 Object.defineProperty(Bignum.prototype, "length", {
 	get: function() { return this.digits.length; }
+});
+Object.defineProperty(Bignum.prototype, "sign", {
+	get: function() {
+		if(this.digits[this.length-1] < 0)
+			return -1;
+		if(this.length == 1 && this.digits[0] == 0)
+			return 0
+		return 1;
+	}
 });
 Bignum.prototype.add = function(that) {
 	that = new Bignum(that);
@@ -441,17 +501,98 @@ Bignum.prototype.normalize = function() {
 	var carry = 0;
 	for(var i = 0; i < this.length; i++) {
 		var digit = this.digits[i] + carry;
-		carry = Math.floor(digit / Bignum.base);
-		this.digits[i] = digit % Bignum.base;
+		carry = Math.floor(digit / Bignum.innerBase);
+		this.digits[i] = (digit % Bignum.innerBase + Bignum.innerBase) % Bignum.innerBase;
 	}
 	while(carry > 0) {
-		this.digits.push(carry % Bignum.base);
-		carry = Math.floor(carry / Bignum.base);
+		this.digits.push(carry % Bignum.innerBase);
+		carry = Math.floor(carry / Bignum.innerBase);
+	}
+	while(this.digits[this.length-1] == 0)
+		this.digits.pop();
+	return this;
+}
+Bignum.prototype.mul = function(that) {
+	that = new Bignum(that);
+	var result = this.digits.map(function(d, i) {
+		var digits = that.digits.map(function(d2){return d*d2;}).reverse();
+		for(;i > 0;i--) digits.push(0);
+		return Bignum.fromDigits(digits.reverse());
+	}).reduce(function(a,b){ return a.add(b); }, Bignum(0)).normalize()
+	this.digits = result.digits;
+	return this;
+}
+Bignum.prototype.pow = function(exp) {
+	if(exp != Math.floor(exp)) throw "Bignum#pow() must be called with integer exponent.";
+	if(exp == 0) return new Bignum(1);
+	var self = this.clone();
+	for(var i = 0; i < exp-1; i++) {
+		this.mul(self);
 	}
 	return this;
 }
-Bignum.prototype.toString = function() {
-	return this.digits.slice().reverse().join('');
+Bignum.prototype.divmod = function(div) {
+	div = new Bignum(div);
+	if(div.length == 1) {
+		div = div.digits[0];
+		var mod = 0;
+		for(var i = this.length-1; i >= 0; i--) {
+			var digit = this.digits[i] + mod * Bignum.innerBase;
+			mod = digit % div;
+			this.digits[i] = Math.floor(digit / div);
+		}
+		return [this.normalize(), mod];
+	}
+	throw RangeError("Division not yet implemented for numbers greater than the innerBase.");
+}
+Bignum.prototype.lt = function(that) {
+	that = new Bignum(that);
+	if(this.length < that.length)
+		return true;
+	if(this.length > that.length)
+		return false;
+	for(var i = this.length - 1; i >= 0; i--) {
+		if(this.digits[i] < that.digits[i])
+			return true;
+		if(this.digits[i] > that.digits[i])
+			return false;
+	}
+	return false;
+}
+Bignum.prototype.eq = function(that) {
+	that = new Bignum(that);
+	if(this.length != that.length)
+		return false;
+	for(var i = 0; i < this.length; i++) {
+		if(this.digits[i] != that.digits[i])
+			return false;
+	}
+	return true;
+}
+Bignum.prototype.neq = function(that) { return !this.eq(that); }
+Bignum.prototype.gte = function(that) { return !this.lt(that); }
+Bignum.prototype.lte = function(that) { return this.eq(that) || this.lt(that); }
+Bignum.prototype.gt = function(that) { return !this.lte(that); }
+Bignum.prototype.clone = function() {
+	return new Bignum(this);
+}
+Bignum.prototype.digitsInBase = function(base) {
+	base = Math.floor(base || this.base);
+	var zero = new Bignum(0);
+	var num = new Bignum(this);
+	var digits = [];
+	do {
+		var result = num.divmod(base);
+		digits.push(result[1]);
+		num = result[0];
+	} while(num.neq(zero));
+	return digits.reverse();
+}
+Bignum.prototype.toString = function(base) {
+	base = Math.floor(base || this.base);
+	if(base < 2 || base > 36)
+		throw TypeError("Can only toString a Bignum when 2 <= base <= 36.");
+	return this.digitsInBase(base).map(function(x){return x.toString(base);}).join('');
 }
 
 
