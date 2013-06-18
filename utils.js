@@ -450,7 +450,7 @@ function Z(num, base) {
 			}
 			pieces.push(Z(sum).mul(Z(base).pow(offset)));
 		}
-		return pieces.reduce(function(a,b){return a.add(b);}, Z(0));
+		return pieces.reduce(Z.add, Z(0));
 	} else if(typeof num == "string" || num instanceof String) {
 		if(num[0] == -1) {
 			var neg = true;
@@ -467,6 +467,9 @@ function Z(num, base) {
 		throw TypeError("Can't understand type of first argument.");
 	}
 	return this.normalize();
+}
+Z.of = function(num) {
+	return new Z(num);
 }
 Z.fromDigits = function(digits) {
 	// This function does nothing intelligent.
@@ -497,6 +500,9 @@ Z.prototype.add = function(that) {
 	}
 	return this.normalize();
 }
+Z.add = function(a,b) {
+	return a.add(b);
+}
 Z.prototype.normalize = function() {
 	var carry = 0;
 	for(var i = 0; i < this.length; i++) {
@@ -508,8 +514,10 @@ Z.prototype.normalize = function() {
 		this.digits.push(carry % Z.innerBase);
 		carry = Math.floor(carry / Z.innerBase);
 	}
-	while(this.digits[this.length-1] == 0)
-		this.digits.pop();
+	for(var i = this.length-1; i>0; i--) {
+		if(this.digits[i] == 0)
+			this.digits.pop();
+	}
 	return this;
 }
 Z.prototype.mul = function(that) {
@@ -518,9 +526,12 @@ Z.prototype.mul = function(that) {
 		var digits = that.digits.map(function(d2){return d*d2;}).reverse();
 		for(;i > 0;i--) digits.push(0);
 		return Z.fromDigits(digits.reverse());
-	}).reduce(function(a,b){ return a.add(b); }, Z(0)).normalize()
+	}).reduce(Z.add, Z(0)).normalize()
 	this.digits = result.digits;
 	return this;
+}
+Z.mul = function(a,b) {
+	return a.mul(b);
 }
 Z.prototype.pow = function(exp) {
 	if(exp != Math.floor(exp)) throw "Z#pow() must be called with integer exponent.";
@@ -530,6 +541,9 @@ Z.prototype.pow = function(exp) {
 		this.mul(self);
 	}
 	return this;
+}
+Z.pow = function(a,b) {
+	return a.pow(b);
 }
 Z.prototype.divmod = function(div) {
 	div = new Z(div);
@@ -544,6 +558,9 @@ Z.prototype.divmod = function(div) {
 		return [this.normalize(), mod];
 	}
 	throw RangeError("Division not yet implemented for numbers greater than the innerBase.");
+}
+Z.divmod = function(a,b) {
+	return a.divmod(b);
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
@@ -569,23 +586,34 @@ Z.prototype.eq = function(that) {
 	}
 	return true;
 }
-Z.prototype.neq = function(that) { return !this.eq(that); }
-Z.prototype.gte = function(that) { return !this.lt(that); }
-Z.prototype.lte = function(that) { return this.eq(that) || this.lt(that); }
+Z.prototype.ne = function(that) { return !this.eq(that); }
+Z.prototype.ge = function(that) { return !this.lt(that); }
+Z.prototype.le = function(that) { return this.eq(that) || this.lt(that); }
 Z.prototype.gt = function(that) { return !this.lte(that); }
+Z.lt = function(a,b) { return a.lt(b); }
+Z.le = function(a,b) { return a.le(b); }
+Z.gt = function(a,b) { return a.gt(b); }
+Z.ge = function(a,b) { return a.ge(b); }
+Z.eq = function(a,b) { return a.eq(b); }
+Z.ne = function(a,b) { return a.ne(b); }
+Z.prototype.isZero = function() {
+	return this.length == 1 && this.digits[0] == 0;
+}
+Z.isZero = function(a) {
+	return a.isZero();
+}
 Z.prototype.clone = function() {
 	return new Z(this);
 }
 Z.prototype.digitsInBase = function(base) {
 	base = Math.floor(base || this.base);
-	var zero = new Z(0);
 	var num = new Z(this);
 	var digits = [];
 	do {
 		var result = num.divmod(base);
 		digits.push(result[1]);
 		num = result[0];
-	} while(num.neq(zero));
+	} while(!num.isZero());
 	return digits.reverse();
 }
 Z.prototype.toString = function(base) {
