@@ -629,8 +629,10 @@ Z.mul = function(a,b) {
 	return a.mul(b);
 }
 Z.prototype.pow = function(exp) {
-	if(exp != Math.floor(exp)) throw "Z#pow() must be called with integer exponent.";
-	if(exp == 0) return new Z(1);
+	if(Z.isZero(exp)) return new Z(1);
+	exp = Z.singleDigit(exp);
+	if(!exp) throw "Pow not yet implemented for numbers greater than the innerBase."
+	if(exp != Math.floor(exp)) throw "Pow must be called with integer exponent.";
 	var self = this.clone();
 	for(var i = 0; i < exp-1; i++) {
 		this.mul(self);
@@ -639,6 +641,20 @@ Z.prototype.pow = function(exp) {
 }
 Z.pow = function(a,b) {
 	return a.pow(b);
+}
+Z.pow2 = function(exp) {
+	// Quick 2^n - this assumes that the innerBase is a power of 2.
+	if(Z.isZero(exp)) return new Z(1);
+	exp = Z.singleDigit(exp);
+	if(!exp) throw "Pow2 not yet implemented for numbers greater than the innerBase."
+	if(exp != Math.floor(exp)) throw "Pow2 must be called with integer exponent.";
+	var digits = [];
+	while(exp >= 25) {
+		digits.push(0);
+		exp -= 25; // innerBase exponent
+	}
+	digits.push(Math.pow(2, exp));
+	return Z._fromDigits(digits);
 }
 Z.prototype.divmod = function(div) {
 	if(this.isZero())
