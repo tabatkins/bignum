@@ -423,7 +423,7 @@ function Z(num, base) {
 	if(!num) return this;
 
 	if(typeof num == "number" || num instanceof Number) {
-		return Z._fromNum(num, base, this);
+		return Z._fromNum(num, this);
 	} else if(typeof num == "string" || num instanceof String) {
 		return Z._fromString(num, base, this);
 	} else if(num instanceof Array) {
@@ -438,7 +438,7 @@ function Z(num, base) {
 Z.of = function(num) {
 	return new Z(num);
 }
-Z._fromNum = function(num, base, z) {
+Z._fromNum = function(num, z) {
 	if(num < 0) {
 		num *= -1;
 		z.sign = -1;
@@ -520,9 +520,16 @@ Object.defineProperty(Z.prototype, "sign", {
 	}
 });
 Z.prototype.add = function(that) {
+	// Fath-path special cases.
+	if(Z.isZero(that)) return this;
+	if(this.isZero()) return this.adopt(that);
+	if(var digit = Z.singleDigit(that)) {
+		this.digits[0] += digit;
+		if(this.digits[0] >= Z.innerBase) this.normalize();
+		return this;
+	}
+	// General case.
 	that = new Z(that);
-	if(this.sign == 0) return that;
-	if(that.sign == 0) return this;
 	if(this.sign == -1) this.digits = this.digits.map(op.neg);
 	if(that.sign == -1) that.digits = that.digits.map(op.neg);
 	var len = Math.max(this.length, that.length);
@@ -658,10 +665,27 @@ Z.prototype.isZero = function() {
 	return true;
 }
 Z.isZero = function(a) {
-	return a.isZero();
+	// This works on JS numbers, too.
+	return a == 0 || a.isZero();
+}
+Z.prototype.singleDigit = function() {
+	// Many functions can be optimized for single-digit Zs.
+	// If the Z is single-digit, returns that digit. This is a truthy value.
+	// Note, this returns false for 0; use isZero() instead.
+	if(this.digits.length == 1) return this.digits[0];
+	return false;
+}
+Z.singleDigit = function(a) {
+	// This works on JS numbers, too.
+	if(a > 0 && a < Z.innerBase) return +a;
+	return a.singleDigit();
 }
 Z.prototype.clone = function() {
 	return new Z(this);
+}
+Z.prototype.adopt = function(that) {
+	// Mutates this to have the same value as that.
+	return Z.call(this, that);
 }
 Z.prototype.digitsInBase = function(base) {
 	base = Math.floor(base || this.base);
