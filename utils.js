@@ -523,7 +523,8 @@ Z.prototype.add = function(that) {
 	// Fath-path special cases.
 	if(Z.isZero(that)) return this;
 	if(this.isZero()) return this.adopt(that);
-	if(var digit = Z.singleDigit(that)) {
+	var digit;
+	if(digit = Z.singleDigit(that)) {
 		this.digits[0] += digit;
 		if(this.digits[0] >= Z.innerBase) this.normalize();
 		return this;
@@ -575,6 +576,20 @@ Z.prototype.negate = function() {
 }
 Z.negate = function(a) { return a.negate(); }
 Z.prototype.mul = function(that) {
+	// Fast-path special cases.
+	if(this.isZero()) return this;
+	if(Z.isZero(that)) { this.digits = []; return this; }
+	var thisDigit, thatDigit;
+	if(thatDigit = Z.singleDigit(that)) {
+		if(thisDigit = this.singleDigit()) {
+			this.digits = [thisDigit * thatDigit];
+			if(this.digits[0] >= Z.innerBase) this.normalize();
+			return this;
+		}
+		this.digits = this.digits.map(function(d) { return d * thatDigit; });
+		return this.normalize();
+	}
+	// General case.
 	that = new Z(that);
 	var longer = this.digits.length > that.digits.length ? this : that;
 	var shorter = this.digits.length <= that.digits.length ? this : that;
@@ -666,7 +681,9 @@ Z.prototype.isZero = function() {
 }
 Z.isZero = function(a) {
 	// This works on JS numbers, too.
-	return a == 0 || a.isZero();
+	if(a instanceof Number || typeof a == "number") return a == 0;
+	if(a instanceof Z) return a.isZero();
+	return Z(a).isZero();
 }
 Z.prototype.singleDigit = function() {
 	// Many functions can be optimized for single-digit Zs.
@@ -677,8 +694,9 @@ Z.prototype.singleDigit = function() {
 }
 Z.singleDigit = function(a) {
 	// This works on JS numbers, too.
-	if(a > 0 && a < Z.innerBase) return +a;
-	return a.singleDigit();
+	if((a instanceof Number || typeof a == "number") && a > 0 && a < Z.innerBase) return a;
+	if(a instanceof Z) return a.singleDigit();
+	return Z(a).singleDigit();
 }
 Z.prototype.clone = function() {
 	return new Z(this);
