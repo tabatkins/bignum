@@ -509,6 +509,9 @@ Z.defaultBase = 10;
 Object.defineProperty(Z.prototype, "length", {
 	get: function() { return this.digits.length; }
 });
+Z.length = function(a) {
+	return Z.lift(a).length;
+}
 Object.defineProperty(Z.prototype, "sign", {
 	get: function() {
 		if(this.digits.length == 0)
@@ -523,6 +526,9 @@ Object.defineProperty(Z.prototype, "sign", {
 		return val;
 	}
 });
+Z.sign = function(a) {
+	return Z.lift(a).sign;
+}
 Z.prototype.add = function(that) {
 	// Fath-path special cases.
 	if(Z.isZero(that)) return this;
@@ -552,7 +558,7 @@ Z.prototype._add = function(that) {
 	return this.normalize();
 }
 Z.add = function(a,b) {
-	return a.add(b);
+	return Z.lift(a).add(b);
 }
 Z.prototype.sub = function(that) {
 	// Fast-path special cases.
@@ -567,6 +573,9 @@ Z.prototype.sub = function(that) {
 	// General case
 	that = new Z(that);
 	return this._add(that.negate());
+}
+Z.sub = function(a,b) {
+	return Z.lift(a).sub(b);
 }
 Z.prototype.normalize = function() {
 	// Put every digit back into the range [0, 2^25)
@@ -597,11 +606,14 @@ Z.prototype.normalize = function() {
 	}
 	return this;
 }
+Z.normalize = function(a) {
+	return Z.lift(a).normalize();
+}
 Z.prototype.negate = function() {
 	this.sign *= -1;
 	return this;
 }
-Z.negate = function(a) { return a.negate(); }
+Z.negate = function(a) { return Z.lift(a).negate(); }
 Z.prototype.mul = function(that) {
 	// Fast-path special cases.
 	if(this.isZero()) return this;
@@ -631,7 +643,7 @@ Z.prototype.mul = function(that) {
 	return this;
 }
 Z.mul = function(a,b) {
-	return a.mul(b);
+	return Z.lift(a).mul(b);
 }
 Z.prototype.pow = function(exp) {
 	if(Z.isZero(exp)) return new Z(1);
@@ -648,7 +660,7 @@ Z.prototype.pow = function(exp) {
 	return this;
 }
 Z.pow = function(a,b) {
-	return a.pow(b);
+	return Z.lift(a).pow(b);
 }
 Z.pow2 = function(exp) {
 	// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
@@ -707,7 +719,7 @@ Z._divmodFindFactor = function(divisor, remainder, low, high) {
 	return Z._divmodFindFactor(divisor, remainder, mid+1, high);
 }
 Z.divmod = function(a,b) {
-	return a.divmod(b);
+	return Z.lift(a).divmod(b);
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
@@ -737,12 +749,12 @@ Z.prototype.ne = function(that) { return !this.eq(that); }
 Z.prototype.ge = function(that) { return !this.lt(that); }
 Z.prototype.le = function(that) { return this.eq(that) || this.lt(that); }
 Z.prototype.gt = function(that) { return !this.le(that); }
-Z.lt = function(a,b) { return a.lt(b); }
-Z.le = function(a,b) { return a.le(b); }
-Z.gt = function(a,b) { return a.gt(b); }
-Z.ge = function(a,b) { return a.ge(b); }
-Z.eq = function(a,b) { return a.eq(b); }
-Z.ne = function(a,b) { return a.ne(b); }
+Z.lt = function(a,b) { return Z.lift(a).lt(b); }
+Z.le = function(a,b) { return Z.lift(a).le(b); }
+Z.gt = function(a,b) { return Z.lift(a).gt(b); }
+Z.ge = function(a,b) { return Z.lift(a).ge(b); }
+Z.eq = function(a,b) { return Z.lift(a).eq(b); }
+Z.ne = function(a,b) { return Z.lift(a).ne(b); }
 Z.prototype.isZero = function() {
 	for(var i = 0; i < this.digits.length; i++)
 		if(this.digits[i] != 0) return false;
@@ -751,8 +763,7 @@ Z.prototype.isZero = function() {
 Z.isZero = function(a) {
 	// This works on JS numbers, too.
 	if(a instanceof Number || typeof a == "number") return a == 0;
-	if(a instanceof Z) return a.isZero();
-	return Z(a).isZero();
+	return Z.lift(a).isZero();
 }
 Z.prototype.singleDigit = function() {
 	// Many functions can be optimized for single-digit Zs.
@@ -765,8 +776,7 @@ Z.singleDigit = function(a, loose) {
 	// This works on JS numbers, too.
 	if((a instanceof Number || typeof a == "number") && loose==="loose" && a > 0 && a <= Math.MAX_INT) return a;
 	if((a instanceof Number || typeof a == "number") && a > 0 && a < Z.innerBase) return a;
-	if(a instanceof Z) return a.singleDigit();
-	return Z(a).singleDigit();
+	return Z.lift(a).singleDigit();
 }
 Z.prototype.isPos = function() {
 	return this.sign == 1;
