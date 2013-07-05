@@ -438,6 +438,10 @@ function Z(num, base) {
 Z.of = function(num) {
 	return new Z(num);
 }
+Z.lift = function(num) {
+	if(num instanceof Z) return num;
+	return new Z(num);
+}
 Z._fromNum = function(num, z) {
 	if(num < 0) {
 		num *= -1;
@@ -690,7 +694,7 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 		this.normalize();
 		remainder.sign = this.sign;
 		this.sign *= divisor.sign;
-		if(remainder.sign == -1 && remainderPositive == "positive") remainder.add(divisor);
+		if(remainder.isNeg() && remainderPositive == "positive") remainder.add(divisor);
 		return [this.normalize(), remainder];
 	}
 }
@@ -763,6 +767,18 @@ Z.singleDigit = function(a, loose) {
 	if((a instanceof Number || typeof a == "number") && a > 0 && a < Z.innerBase) return a;
 	if(a instanceof Z) return a.singleDigit();
 	return Z(a).singleDigit();
+}
+Z.prototype.isPos = function() {
+	return this.sign == 1;
+}
+Z.isPos = function(a) {
+	return Z.lift(a).isPos();
+}
+Z.prototype.isNeg = function() {
+	return this.sign == -1;
+}
+Z.isNeg = function(a) {
+	return Z.lift(a).isNeg();
 }
 Z.prototype.clone = function() {
 	return new Z(this);
