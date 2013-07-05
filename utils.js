@@ -570,6 +570,8 @@ Z.prototype.normalize = function() {
 	if(carry < 0) {
 		sign = -1;
 		carry = -carry - 1;
+		for(var i = 0; i < this.digits.length; i++)
+			this.digits[i] = Z.innerBase - this.digits[i] + (i == 0 ? 0 : -1);
 	}
 	// If there's any final carry, add more digits.
 	while(carry > 0) {
