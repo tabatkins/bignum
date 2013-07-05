@@ -533,9 +533,11 @@ Z.prototype.add = function(that) {
 }
 Z.prototype._add = function(that) {
 	// Destructive toward that as well - ensure it's fresh.
-	if(this.sign == -1)
+	if(this.sign == -1) {
+		this.sign = 1;
 		for(var i = 0; i < this.digits.length; i++)
 			this.digits[i] *= -1;
+	}
 	if(that.sign == -1)
 		for(var i = 0; i < that.digits.length; i++)
 			that.digits[i] *= -1;
@@ -571,9 +573,8 @@ Z.prototype.normalize = function() {
 		this.digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
 	}
 	// If final carry is negative, entire number was negative.
-	var sign = 1;
 	if(carry < 0) {
-		sign = -1;
+		this.sign *= -1;
 		carry = -carry - 1;
 		for(var i = 0; i < this.digits.length; i++)
 			this.digits[i] = Z.innerBase - this.digits[i] + (i == 0 ? 0 : -1);
@@ -590,8 +591,6 @@ Z.prototype.normalize = function() {
 		else
 			break;
 	}
-	// Set sign correctly.
-	this.sign = sign;
 	return this;
 }
 Z.prototype.negate = function() {
@@ -661,7 +660,7 @@ Z.pow2 = function(exp) {
 	digits.push(Math.pow(2, exp));
 	return Z._fromDigits(digits);
 }
-Z.prototype.divmod = function(divisor) {
+Z.prototype.divmod = function(divisor, remainderPositive) {
 	if(this.isZero()) return [this, 0];
 	if(Z.singleDigit(divisor)) {
 		divisor = Z.singleDigit(divisor);
@@ -671,6 +670,7 @@ Z.prototype.divmod = function(divisor) {
 			mod = digit % divisor;
 			this.digits[i] = Math.floor(digit / divisor);
 		}
+		if(mod < 0 && remainderPositive == "positive") mod += divisor;
 		return [this.normalize(), mod];
 	} else {
 		divisor = new Z(divisor);
@@ -687,6 +687,10 @@ Z.prototype.divmod = function(divisor) {
 			this.digits[i] = factor;
 			remainder.sub(Z(factor).mul(divisor)); // replace with mod later
 		}
+		this.normalize();
+		remainder.sign = this.sign;
+		this.sign *= divisor.sign;
+		if(remainder.sign == -1 && remainderPositive == "positive") remainder.add(divisor);
 		return [this.normalize(), remainder];
 	}
 }
