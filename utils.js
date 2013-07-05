@@ -648,7 +648,7 @@ Z.pow = function(a,b) {
 	return a.pow(b);
 }
 Z.pow2 = function(exp) {
-	// Quick 2^n - this assumes that the innerBase is a power of 2.
+	// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
 	if(Z.isZero(exp)) return new Z(1);
 	exp = Z.singleDigit(exp, "loose");
 	if(!exp) throw "Pow2 not yet implemented for numbers greater than Math.MAX_INT."
@@ -662,32 +662,25 @@ Z.pow2 = function(exp) {
 	return Z._fromDigits(digits);
 }
 Z.prototype.divmod = function(div) {
-	if(this.isZero())
-		return [this, 0];
-	if(div <= Z.innerBase) {
-		var mod = 0;
-		for(var i = this.length-1; i >= 0; i--) {
-			var digit = this.digits[i] + mod * Z.innerBase;
-			mod = digit % div;
-			this.digits[i] = Math.floor(digit / div);
-		}
-		return [this.normalize(), mod];
+	if(this.isZero()) return [this, 0];
+	if(div > Z.innerBase) throw RangeError("Division not yet implemented for numbers greater than the innerBase.");
+	var mod = 0;
+	for(var i = this.length-1; i >= 0; i--) {
+		var digit = this.digits[i] + mod * Z.innerBase;
+		mod = digit % div;
+		this.digits[i] = Math.floor(digit / div);
 	}
-	throw RangeError("Division not yet implemented for numbers greater than the innerBase.");
+	return [this.normalize(), mod];
 }
 Z.divmod = function(a,b) {
 	return a.divmod(b);
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
-	if(this.digits.length < that.digits.length)
-		return true;
-	if(this.digits.length > that.digits.length)
-		return false;
-	if(this.sign < that.sign)
-		return true;
-	if(this.sign > that.sign)
-		return false;
+	if(this.digits.length < that.digits.length) return true;
+	if(this.digits.length > that.digits.length) return false;
+	if(this.sign < that.sign) return true;
+	if(this.sign > that.sign) return false;
 	for(var i = this.length - 1; i >= 0; i--) {
 		if(this.digits[i] < that.digits[i])
 			return true;
@@ -698,10 +691,8 @@ Z.prototype.lt = function(that) {
 }
 Z.prototype.eq = function(that) {
 	that = new Z(that);
-	if(this.digits.length != that.digits.length)
-		return false;
-	if(this.sign != that.sign)
-		return false;
+	if(this.digits.length != that.digits.length) return false;
+	if(this.sign != that.sign) return false;
 	for(var i = 0; i < this.length; i++) {
 		if(this.digits[i] != that.digits[i])
 			return false;
