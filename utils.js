@@ -448,13 +448,13 @@ Z._fromNum = function(num, z) {
 		return z;
 	} else if(num < Math.MAX_INT) {
 		z.digits = [];
-		do {
+		while(num > 0) {
 			z.digits.push(num % Z.innerBase);
 			num = Math.floor(num / Z.innerBase);
-		} while(num > 0);
+		}
 		return z;
 	}
-	throw RangeError("Number is too large to reliably generate a Z from.");
+	throw TypeError("Number is too large to reliably generate a Z from.");
 }
 Z._fromString = function(num, base, z) {
 	var sign = 1;
@@ -465,7 +465,7 @@ Z._fromString = function(num, base, z) {
 	var digits = num.split('').map(function(x){
 		var digit = parseInt(x,base);
 		if(Number.isNaN(digit))
-			throw RangeError('"'+num+'" is not a base '+base+' number.');
+			throw TypeError('"'+num+'" is not a base '+base+' number.');
 		return digit;
 	});
 	return Z._fromArray(digits, base, sign);
@@ -532,8 +532,13 @@ Z.prototype.add = function(that) {
 	return this._add(new Z(that));
 }
 Z.prototype._add = function(that) {
-	if(this.sign == -1) this.digits = this.digits.map(op.neg);
-	if(that.sign == -1) that.digits = that.digits.map(op.neg);
+	// Destructive toward that as well - ensure it's fresh.
+	if(this.sign == -1)
+		for(var i = 0; i < this.digits.length; i++)
+			this.digits[i] *= -1;
+	if(that.sign == -1)
+		for(var i = 0; i < that.digits.length; i++)
+			that.digits[i] *= -1;
 	var len = Math.max(this.length, that.length);
 	for(var i = 0; i < len; i++) {
 		this.digits[i] = (this.digits[i]||0) + (that.digits[i]||0);
@@ -603,7 +608,8 @@ Z.prototype.mul = function(that) {
 			if(this.digits[0] >= Z.innerBase) this.normalize();
 			return this;
 		}
-		this.digits = this.digits.map(function(d) { return d * thatDigit; });
+		for(var i = 0; i < this.digits.length; i++)
+			this.digits[i] *= thatDigit;
 		return this.normalize();
 	}
 	// General case.
