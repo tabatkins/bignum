@@ -413,54 +413,21 @@ function isValidSquarePath(point, path, rows, cols) {
 	return true;
 }
 
+Math.MAX_INT = Math.pow(2,53);
 function Z(num, base) {
 	if(!(this instanceof Z)) return new Z(num, base);
-	if(num === undefined) num = 0;
 	if(base === undefined) base = num.base || Z.defaultBase;
 	this.base = base;
+	this.sign = 1;
+	this.digits = [];
+	if(!num) return this;
 
 	if(typeof num == "number" || num instanceof Number) {
-		if(num < 0) {
-			var neg = true;
-			num *= -1;
-		}
-		this.digits = [];
-		do {
-			this.digits.push(num % Z.innerBase);
-			num = Math.floor(num / Z.innerBase);
-		} while(num > 0);
-		if(neg) {
-			this.digits = this.digits.map(op.neg);
-		}
-	} else if(num instanceof Array) {
-		var digits = num.slice().reverse();
-		// First, collect input digits together into a larger base,
-		// as large as I can get without overshooting innerBase,
-		// for better efficiency (less steps later).
-		// Then, just use Z math to do the conversion for me;
-		// nothing particularly clever going on here.
-		var size = Math.floor(Math.log(Z.innerBase) / Math.log(base));
-		var bigDigits = Math.ceil(digits.length / size);
-		var pieces = [];
-		for(var i = 0; i < bigDigits; i++) {
-			var offset = i*size;
-			var sum = 0;
-			for(var j = 0; j < size; j++) {
-				sum += (digits[offset+j]||0) * Math.pow(base, j);
-			}
-			pieces.push(Z(sum).mul(Z(base).pow(offset)));
-		}
-		return pieces.reduce(Z.add, Z(0));
+		return Z._fromNum(num, base, this);
 	} else if(typeof num == "string" || num instanceof String) {
-		if(num[0] == -1) {
-			var neg = true;
-			num = num.slice(1);
-		}
-		var digits = num.split('').map(function(x){return parseInt(x,base);});
-		if(neg) {
-			digits = digits.map(op.neg);
-		}
-		return new Z(digits, base);
+		return Z._fromString(num, base, this);
+	} else if(num instanceof Array) {
+		return Z._fromArray(num, base);
 	} else if(num instanceof Z) {
 		this.digits = num.digits.slice();
 	} else {
@@ -471,7 +438,62 @@ function Z(num, base) {
 Z.of = function(num) {
 	return new Z(num);
 }
-Z.fromDigits = function(digits) {
+Z._fromNum = function(num, base, z) {
+	if(num < 0) {
+		num *= -1;
+		z.sign = -1;
+	}
+	if(num < Z.innerBase) {
+		z.digits = [num];
+		return z;
+	} else if(num < Math.MAX_INT) {
+		z.digits = [];
+		do {
+			z.digits.push(num % Z.innerBase);
+			num = Math.floor(num / Z.innerBase);
+		} while(num > 0);
+		return z;
+	}
+	throw RangeError("Number is too large to reliably generate a Z from.");
+}
+Z._fromString = function(num, base, z) {
+	var sign = 1;
+	if(num[0] == "-") {
+		num = num.slice(1);
+		sign = -1;
+	}
+	var digits = num.split('').map(function(x){
+		var digit = parseInt(x,base);
+		if(Number.isNaN(digit))
+			throw RangeError('"'+num+'" is not a base '+base+' number.');
+		return digit;
+	});
+	return Z._fromArray(digits, base, sign);
+}
+Z._fromArray = function(num, base, sign) {
+	// Put the digits in LSD order.
+	var digits = num.slice().reverse();
+	// First, collect input digits together into a larger base,
+	// as large as I can get without overshooting innerBase,
+	// for better efficiency (less steps later).
+	// Then, just use Z math to do the conversion for me;
+	// nothing particularly clever going on here.
+	var size = Math.floor(Math.log(Z.innerBase) / Math.log(base));
+	var bigDigits = Math.ceil(digits.length / size);
+	var pieces = [];
+	for(var i = 0; i < bigDigits; i++) {
+		var offset = i*size;
+		var sum = 0;
+		for(var j = 0; j < size; j++) {
+			sum += (digits[offset+j]||0) * Math.pow(base, j);
+		}
+		pieces.push(Z(sum).mul(Z(base).pow(offset)));
+	}
+	var result = pieces.reduce(Z.add, Z(0));
+	result.sign = sign;
+	return result;
+}
+Z._fromDigits = function(digits) {
 	// This function does nothing intelligent.
 	// It assumes that the digit array is in innerBase already.
 	var result = new Z(0);
@@ -485,15 +507,24 @@ Object.defineProperty(Z.prototype, "length", {
 });
 Object.defineProperty(Z.prototype, "sign", {
 	get: function() {
-		if(this.digits[this.length-1] < 0)
-			return -1;
-		if(this.length == 1 && this.digits[0] == 0)
-			return 0
-		return 1;
+		if(this.digits.length == 0)
+			return 0;
+		return this._sign;
+	},
+	set: function(val) {
+		if(val < 0)
+			this._sign = -1;
+		else
+			this._sign = 1;
+		return val;
 	}
 });
 Z.prototype.add = function(that) {
 	that = new Z(that);
+	if(this.sign == 0) return that;
+	if(that.sign == 0) return this;
+	if(this.sign == -1) this.digits = this.digits.map(op.neg);
+	if(that.sign == -1) that.digits = that.digits.map(op.neg);
 	var len = Math.max(this.length, that.length);
 	for(var i = 0; i < len; i++) {
 		this.digits[i] = (this.digits[i]||0) + (that.digits[i]||0);
@@ -504,30 +535,47 @@ Z.add = function(a,b) {
 	return a.add(b);
 }
 Z.prototype.normalize = function() {
+	// Put every digit back into the range [0, 2^25)
 	var carry = 0;
 	for(var i = 0; i < this.length; i++) {
 		var digit = this.digits[i] + carry;
 		carry = Math.floor(digit / Z.innerBase);
 		this.digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
 	}
+	// If final carry is negative, entire number was negative.
+	var sign = 1;
+	if(carry < 0) {
+		sign = -1;
+		carry = -carry - 1;
+	}
+	// If there's any final carry, add more digits.
 	while(carry > 0) {
 		this.digits.push(carry % Z.innerBase);
 		carry = Math.floor(carry / Z.innerBase);
 	}
+	// Drop any leading zeros.
 	for(var i = this.length-1; i>0; i--) {
 		if(this.digits[i] == 0)
 			this.digits.pop();
 	}
+	// Set sign correctly.
+	this.sign = sign;
 	return this;
 }
+Z.prototype.negate = function() {
+	this.sign *= -1;
+	return this;
+}
+Z.negate = function(a) { return a.negate(); }
 Z.prototype.mul = function(that) {
 	that = new Z(that);
 	var result = this.digits.map(function(d, i) {
 		var digits = that.digits.map(function(d2){return d*d2;}).reverse();
 		for(;i > 0;i--) digits.push(0);
-		return Z.fromDigits(digits.reverse());
-	}).reduce(Z.add, Z(0)).normalize()
+		return Z._fromDigits(digits.reverse());
+	}).reduce(Z.add, Z(0));
 	this.digits = result.digits;
+	this.sign *= that.sign;
 	return this;
 }
 Z.mul = function(a,b) {
@@ -546,9 +594,9 @@ Z.pow = function(a,b) {
 	return a.pow(b);
 }
 Z.prototype.divmod = function(div) {
-	div = new Z(div);
-	if(div.length == 1) {
-		div = div.digits[0];
+	if(this.isZero())
+		return [this, 0];
+	if(div < Z.innerBase) {
 		var mod = 0;
 		for(var i = this.length-1; i >= 0; i--) {
 			var digit = this.digits[i] + mod * Z.innerBase;
@@ -564,9 +612,13 @@ Z.divmod = function(a,b) {
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
-	if(this.length < that.length)
+	if(this.digits.length < that.digits.length)
 		return true;
-	if(this.length > that.length)
+	if(this.digits.length > that.digits.length)
+		return false;
+	if(this.sign < that.sign)
+		return true;
+	if(this.sign > that.sign)
 		return false;
 	for(var i = this.length - 1; i >= 0; i--) {
 		if(this.digits[i] < that.digits[i])
@@ -578,7 +630,9 @@ Z.prototype.lt = function(that) {
 }
 Z.prototype.eq = function(that) {
 	that = new Z(that);
-	if(this.length != that.length)
+	if(this.digits.length != that.digits.length)
+		return false;
+	if(this.sign != that.sign)
 		return false;
 	for(var i = 0; i < this.length; i++) {
 		if(this.digits[i] != that.digits[i])
@@ -597,7 +651,9 @@ Z.ge = function(a,b) { return a.ge(b); }
 Z.eq = function(a,b) { return a.eq(b); }
 Z.ne = function(a,b) { return a.ne(b); }
 Z.prototype.isZero = function() {
-	return this.length == 1 && this.digits[0] == 0;
+	for(var i = 0; i < this.digits.length; i++)
+		if(this.digits[i] != 0) return false;
+	return true;
 }
 Z.isZero = function(a) {
 	return a.isZero();
@@ -620,8 +676,53 @@ Z.prototype.toString = function(base) {
 	base = Math.floor(base || this.base);
 	if(base < 2 || base > 36)
 		throw TypeError("Can only toString a Z when 2 <= base <= 36.");
-	return this.digitsInBase(base).map(function(x){return x.toString(base);}).join('');
+	var result = this.digitsInBase(base).map(function(x){return x.toString(base);}).join('');
+	if(this.sign == -1)
+		result = "-" + result;
+	return result;
 }
+Z.prototype.__traceToString__ = function() { return "Z("+(this.sign<0?'-':'+')+this.digits+")"; }
+
+String.prototype.repeat = function(num) {
+	return Array(num+1).join(this);
+}
+function traceClass(c, instanceStringifier) {
+	var oldToString = c.prototype.toString;
+	if(typeof instanceStringifier == "function") {
+		c.prototype.toString = instanceStringifier;
+	} else if("__traceToString__" in c.prototype) {
+		c.prototype.toString = c.prototype.__traceToString__;
+	} else {
+		c.prototype.toString = function() { return "[object "+c.name+"]"; }
+	}
+	var newStringifier = function(a) { if(a === c) return "[class "+c.name+"]"; return a+''; }
+	for(method in c.prototype) {
+		if(method == "toString" || method == "__traceToString__") continue;
+		traceMethod(c.prototype, method, newStringifier);
+	}
+	for(method in c) traceMethod(c, method, newStringifier);
+	c.prototype._oldToString = oldToString;
+};
+traceClass.level = 0;
+function traceMethod(object, methodName, stringifier) {
+	if(typeof object[methodName] == "function") {
+		var oldmethod = object[methodName];
+		object[methodName] = function() {
+			var enterPrefix = "-".repeat(traceClass.level);
+			var returnPrefix = " ".repeat(traceClass.level);
+			traceClass.level++;
+			if(traceClass.level > 20) { traceClass.level = 0; throw Error("Too much recursion!"); }
+			var args = [].slice.call(arguments);
+			console.log(enterPrefix+"Entering "+methodName+"("+args.map(stringifier)+") on "+stringifier(this));
+			var result = oldmethod.apply(this, args);
+			console.log(returnPrefix+"Returning "+stringifier(result));
+			traceClass.level--;
+			return result;
+		};
+	}
+
+}
+traceClass(Z);
 
 
 function memoize(func) {
