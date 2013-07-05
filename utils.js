@@ -430,10 +430,10 @@ function Z(num, base) {
 		return Z._fromArray(num, base);
 	} else if(num instanceof Z) {
 		this.digits = num.digits.slice();
+		return this.normalize();
 	} else {
 		throw TypeError("Can't understand type of first argument.");
 	}
-	return this.normalize();
 }
 Z.of = function(num) {
 	return new Z(num);
