@@ -569,8 +569,10 @@ Z.prototype.negate = function() {
 Z.negate = function(a) { return a.negate(); }
 Z.prototype.mul = function(that) {
 	that = new Z(that);
-	var result = this.digits.map(function(d, i) {
-		var digits = that.digits.map(function(d2){return d*d2;}).reverse();
+	var longer = this.digits.length > that.digits.length ? this : that;
+	var shorter = this.digits.length <= that.digits.length ? this : that;
+	var result = shorter.digits.map(function(d, i) {
+		var digits = longer.digits.map(function(d2){return d*d2;}).reverse();
 		for(;i > 0;i--) digits.push(0);
 		return Z._fromDigits(digits.reverse());
 	}).reduce(Z.add, Z(0));
@@ -596,7 +598,7 @@ Z.pow = function(a,b) {
 Z.prototype.divmod = function(div) {
 	if(this.isZero())
 		return [this, 0];
-	if(div < Z.innerBase) {
+	if(div <= Z.innerBase) {
 		var mod = 0;
 		for(var i = this.length-1; i >= 0; i--) {
 			var digit = this.digits[i] + mod * Z.innerBase;
@@ -722,7 +724,6 @@ function traceMethod(object, methodName, stringifier) {
 	}
 
 }
-traceClass(Z);
 
 
 function memoize(func) {
