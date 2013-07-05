@@ -529,8 +529,9 @@ Z.prototype.add = function(that) {
 		if(this.digits[0] >= Z.innerBase) this.normalize();
 		return this;
 	}
-	// General case.
-	that = new Z(that);
+	return this._add(new Z(that));
+}
+Z.prototype._add = function(that) {
 	if(this.sign == -1) this.digits = this.digits.map(op.neg);
 	if(that.sign == -1) that.digits = that.digits.map(op.neg);
 	var len = Math.max(this.length, that.length);
@@ -541,6 +542,20 @@ Z.prototype.add = function(that) {
 }
 Z.add = function(a,b) {
 	return a.add(b);
+}
+Z.prototype.sub = function(that) {
+	// Fast-path special cases.
+	if(Z.isZero(that)) return this;
+	if(this.isZero()) return this.adopt(that).negate();
+	var digit;
+	if(digit = Z.singleDigit(that)) {
+		this.digits[0] -= digit;
+		if(this.digits[0] <= 0) this.normalize();
+		return this;
+	}
+	// General case
+	that = new Z(that);
+	return this._add(that.negate());
 }
 Z.prototype.normalize = function() {
 	// Put every digit back into the range [0, 2^25)
