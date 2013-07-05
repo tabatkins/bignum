@@ -630,7 +630,7 @@ Z.prototype.mul = function(that) {
 		return this.normalize();
 	}
 	// General case.
-	that = new Z(that);
+	that = Z.lift(that);
 	var longer = this.digits.length > that.digits.length ? this : that;
 	var shorter = this.digits.length <= that.digits.length ? this : that;
 	var result = shorter.digits.map(function(d, i) {
@@ -689,7 +689,7 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 		if(mod < 0 && remainderPositive == "positive") mod += divisor;
 		return [this.normalize(), mod];
 	} else {
-		divisor = new Z(divisor);
+		divisor = Z.lift(divisor);
 		remainder = new Z(0);
 		for(var i = this.digits.length -1; i >= 0; i--) {
 			var digit = this.digits[i];
@@ -793,9 +793,13 @@ Z.isNeg = function(a) {
 Z.prototype.clone = function() {
 	return new Z(this);
 }
+Z.clone = Z.of;
 Z.prototype.adopt = function(that) {
 	// Mutates this to have the same value as that.
 	return Z.call(this, that);
+}
+Z.adopt = function(a,b) {
+	return Z.lift(a).adopt(b);
 }
 Z.prototype.digitsInBase = function(base) {
 	base = Math.floor(base || this.base);
