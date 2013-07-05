@@ -584,9 +584,11 @@ Z.prototype.normalize = function() {
 		carry = Math.floor(carry / Z.innerBase);
 	}
 	// Drop any leading zeros.
-	for(var i = this.length-1; i>0; i--) {
-		if(this.digits[i] == 0)
+	for(var i = this.digits.length-1; i>=0; i--) {
+		if(this.digits[i] === 0)
 			this.digits.pop();
+		else
+			break;
 	}
 	// Set sign correctly.
 	this.sign = sign;
@@ -630,6 +632,9 @@ Z.mul = function(a,b) {
 }
 Z.prototype.pow = function(exp) {
 	if(Z.isZero(exp)) return new Z(1);
+	if(this.isZero()) return this; // 0^n = 0 (Except 0^0=1, caught by previous line.)
+	if(this.singleDigit() == 1) return this; // 1^n = 1
+	if(this.singleDigit() == 2) return Z.pow2(exp); // Faster 2^n
 	exp = Z.singleDigit(exp);
 	if(!exp) throw "Pow not yet implemented for numbers greater than the innerBase."
 	if(exp != Math.floor(exp)) throw "Pow must be called with integer exponent.";
@@ -645,8 +650,8 @@ Z.pow = function(a,b) {
 Z.pow2 = function(exp) {
 	// Quick 2^n - this assumes that the innerBase is a power of 2.
 	if(Z.isZero(exp)) return new Z(1);
-	exp = Z.singleDigit(exp);
-	if(!exp) throw "Pow2 not yet implemented for numbers greater than the innerBase."
+	exp = Z.singleDigit(exp, "loose");
+	if(!exp) throw "Pow2 not yet implemented for numbers greater than Math.MAX_INT."
 	if(exp != Math.floor(exp)) throw "Pow2 must be called with integer exponent.";
 	var digits = [];
 	while(exp >= 25) {
@@ -731,8 +736,9 @@ Z.prototype.singleDigit = function() {
 	if(this.digits.length == 1 && this.sign == 1) return this.digits[0];
 	return false;
 }
-Z.singleDigit = function(a) {
+Z.singleDigit = function(a, loose) {
 	// This works on JS numbers, too.
+	if((a instanceof Number || typeof a == "number") && loose==="loose" && a > 0 && a <= Math.MAX_INT) return a;
 	if((a instanceof Number || typeof a == "number") && a > 0 && a < Z.innerBase) return a;
 	if(a instanceof Z) return a.singleDigit();
 	return Z(a).singleDigit();
