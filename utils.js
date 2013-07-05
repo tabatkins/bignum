@@ -672,7 +672,7 @@ Z.prototype.singleDigit = function() {
 	// Many functions can be optimized for single-digit Zs.
 	// If the Z is single-digit, returns that digit. This is a truthy value.
 	// Note, this returns false for 0; use isZero() instead.
-	if(this.digits.length == 1) return this.digits[0];
+	if(this.digits.length == 1 && this.sign == 1) return this.digits[0];
 	return false;
 }
 Z.singleDigit = function(a) {
