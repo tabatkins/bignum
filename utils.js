@@ -661,16 +661,42 @@ Z.pow2 = function(exp) {
 	digits.push(Math.pow(2, exp));
 	return Z._fromDigits(digits);
 }
-Z.prototype.divmod = function(div) {
+Z.prototype.divmod = function(divisor) {
 	if(this.isZero()) return [this, 0];
-	if(div > Z.innerBase) throw RangeError("Division not yet implemented for numbers greater than the innerBase.");
-	var mod = 0;
-	for(var i = this.length-1; i >= 0; i--) {
-		var digit = this.digits[i] + mod * Z.innerBase;
-		mod = digit % div;
-		this.digits[i] = Math.floor(digit / div);
+	if(Z.singleDigit(divisor)) {
+		divisor = Z.singleDigit(divisor);
+		var mod = 0;
+		for(var i = this.length-1; i >= 0; i--) {
+			var digit = this.digits[i] + mod * Z.innerBase;
+			mod = digit % divisor;
+			this.digits[i] = Math.floor(digit / divisor);
+		}
+		return [this.normalize(), mod];
+	} else {
+		divisor = new Z(divisor);
+		remainder = new Z(0);
+		for(var i = this.digits.length -1; i >= 0; i--) {
+			var digit = this.digits[i];
+			remainder.digits.unshift(digit);
+			if(remainder.lt(divisor)) {
+				// Fast-path, since this'll be common and it's slow to find via binary-search.
+				var factor = 0;
+			} else {
+				var factor = Z._divmodFindFactor(divisor, remainder, 0, Z.innerBase-1);
+			}
+			this.digits[i] = factor;
+			remainder.sub(Z(factor).mul(divisor)); // replace with mod later
+		}
+		return [this.normalize(), remainder];
 	}
-	return [this.normalize(), mod];
+}
+Z._divmodFindFactor = function(divisor, remainder, low, high) {
+	// Binary search to find largest n that satisfies `divisor * n <= remainder`
+	var mid = Math.ceil((low+high)/2);
+	var mul = Z(mid).mul(divisor);
+	if(mul.gt(remainder)) return Z._divmodFindFactor(divisor, remainder, low, mid-1);
+	if(mul.eq(remainder) || Z(mul).add(divisor).gt(remainder)) return mid;
+	return Z._divmodFindFactor(divisor, remainder, mid+1, high);
 }
 Z.divmod = function(a,b) {
 	return a.divmod(b);
@@ -702,7 +728,7 @@ Z.prototype.eq = function(that) {
 Z.prototype.ne = function(that) { return !this.eq(that); }
 Z.prototype.ge = function(that) { return !this.lt(that); }
 Z.prototype.le = function(that) { return this.eq(that) || this.lt(that); }
-Z.prototype.gt = function(that) { return !this.lte(that); }
+Z.prototype.gt = function(that) { return !this.le(that); }
 Z.lt = function(a,b) { return a.lt(b); }
 Z.le = function(a,b) { return a.le(b); }
 Z.gt = function(a,b) { return a.gt(b); }
