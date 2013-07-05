@@ -678,8 +678,13 @@ Z.pow2 = function(exp) {
 }
 Z.prototype.divmod = function(divisor, remainderPositive) {
 	if(this.isZero()) return [this, 0];
+	if(Z.isZero(divisor)) throw "Dividing by 0 is invalid.";
 	if(Z.singleDigit(divisor)) {
 		divisor = Z.singleDigit(divisor);
+		if(this.singleDigit()) {
+			var dividend = this.singleDigit();
+			return [Math.floor(dividend/divisor), dividend % divisor];
+		}
 		var mod = 0;
 		for(var i = this.length-1; i >= 0; i--) {
 			var digit = this.digits[i] + mod * Z.innerBase;
