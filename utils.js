@@ -527,6 +527,11 @@ Object.defineProperty(Z.prototype, "sign", {
 	}
 });
 Z.sign = function(a) {
+	if(a instanceof Number || typeof a == "number") {
+		if(a < 0) return -1;
+		if(a > 0) return 1;
+		return 0;
+	}
 	return Z.lift(a).sign;
 }
 Z.prototype.add = function(that) {
@@ -832,12 +837,14 @@ Z.prototype.isPos = function() {
 	return this.sign == 1;
 }
 Z.isPos = function(a) {
+	if(a instanceof Number || typeof a == "number") return a > 0;
 	return Z.lift(a).isPos();
 }
 Z.prototype.isNeg = function() {
 	return this.sign == -1;
 }
 Z.isNeg = function(a) {
+	if(a instanceof Number || typeof a == "number") return a < 0;
 	return Z.lift(a).isNeg();
 }
 Z.prototype.clone = function() {
@@ -875,6 +882,7 @@ Z.prototype.toString = function(base) {
 	return result;
 }
 Z.toString = function(a, base) {
+	if(a instanceof Number || typeof a == "number") return a.toString(base);
 	return Z.lift(a).toString(base);
 }
 Z.prototype.__traceToString__ = function() { return "Z("+(this.sign<0?'-':'+')+this.digits+")"; }
