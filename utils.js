@@ -650,7 +650,7 @@ Z.mul = function(a,b) {
 Z.prototype.pow = function(exp) {
 	if(Z.isZero(exp)) return new Z(1);
 	if(this.isZero()) return this; // 0^n = 0 (Except 0^0=1, caught by previous line.)
-	exp = Z.singleDigit(exp, "loose");
+	exp = Z.toNum(exp);
 	if(!exp) throw "Pow not yet implemented for exponents greater than Math.MAX_INT."
 	if(exp == 1) return this;
 	var digit;
@@ -700,7 +700,7 @@ Z.pow = function(a,b) {
 Z.pow2 = function(exp) {
 	// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
 	if(Z.isZero(exp)) return new Z(1);
-	exp = Z.singleDigit(exp, "loose");
+	exp = Z.toNum(exp);
 	if(!exp) throw "Pow2 not yet implemented for numbers greater than Math.MAX_INT."
 	if(exp != Math.floor(exp)) throw "Pow2 must be called with integer exponent.";
 	var digits = [];
@@ -801,7 +801,6 @@ Z.prototype.isZero = function() {
 	return true;
 }
 Z.isZero = function(a) {
-	// This works on JS numbers, too.
 	if(a instanceof Number || typeof a == "number") return a == 0;
 	return Z.lift(a).isZero();
 }
@@ -812,11 +811,21 @@ Z.prototype.singleDigit = function() {
 	if(this.digits.length == 1 && this.sign == 1) return this.digits[0];
 	return false;
 }
-Z.singleDigit = function(a, loose) {
-	// This works on JS numbers, too.
-	if((a instanceof Number || typeof a == "number") && loose==="loose" && a > 0 && a <= Math.MAX_INT) return a;
+Z.singleDigit = function(a) {
 	if((a instanceof Number || typeof a == "number") && a > 0 && a < Z.innerBase) return a;
 	return Z.lift(a).singleDigit();
+}
+Z.prototype.toNum = function() {
+	if(this.isZero()) return 0;
+	if(this.singleDigit()) return this.singleDigit() * this.sign;
+	if(this.digits.length == 2) return (this.digits[0] + this.digits[1]*Z.innerBase)*this.sign;
+	if(this.digits.length == 3 && this.digits[3] < 8)
+		return (this.digits[0] + this.digits[1]*Z.innerBase + this.digits[2]*Z.innerBase*Z.innerBase)*this.sign;
+	return false;
+}
+Z.toNum = function(a) {
+	if((a instanceof Number || typeof a == "number") && a >= -Math.MAX_INT && a <= Math.MAX_INT) return a;
+	return Z.lift(a).toNum();
 }
 Z.prototype.isPos = function() {
 	return this.sign == 1;
