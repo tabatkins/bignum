@@ -816,6 +816,7 @@ Z.singleDigit = function(a) {
 	return Z.lift(a).singleDigit();
 }
 Z.prototype.toNum = function() {
+	// Converts the Z into a JS num, if possible; otherwise returns false.
 	if(this.isZero()) return 0;
 	if(this.singleDigit()) return this.singleDigit() * this.sign;
 	if(this.digits.length == 2) return (this.digits[0] + this.digits[1]*Z.innerBase)*this.sign;
