@@ -648,11 +648,44 @@ Z.mul = function(a,b) {
 Z.prototype.pow = function(exp) {
 	if(Z.isZero(exp)) return new Z(1);
 	if(this.isZero()) return this; // 0^n = 0 (Except 0^0=1, caught by previous line.)
-	if(this.singleDigit() == 1) return this; // 1^n = 1
-	if(this.singleDigit() == 2) return Z.pow2(exp); // Faster 2^n
-	exp = Z.singleDigit(exp);
-	if(!exp) throw "Pow not yet implemented for numbers greater than the innerBase."
-	if(exp != Math.floor(exp)) throw "Pow must be called with integer exponent.";
+	exp = Z.singleDigit(exp, "loose");
+	if(!exp) throw "Pow not yet implemented for exponents greater than Math.MAX_INT."
+	if(exp == 1) return this;
+	var digit;
+	if(digit = this.singleDigit()) {
+		if(digit == 1) return this; // 1^n = 1
+		// Power of 2 fast-paths
+		for(var i = 1; i < 25; i++) {
+			if(digit == Math.pow(2,i) && exp*i <= Math.MAX_INT) return this.adopt(Z.pow2(exp*i));
+		}
+		// Computable within JS num limits (answer is less than 2^53)
+		if(	(digit == 3 && exp <= 33) ||
+			(digit == 5 && exp <= 22) ||
+			(digit == 6 && exp <= 20) ||
+			(digit == 7 && exp <= 18) ||
+			(digit == 9 && exp <= 16) ||
+			(digit <= 11 && exp <= 15) ||
+			(digit <= 13 && exp <= 14) ||
+			(digit <= 16 && exp <= 13) ||
+			(digit <= 21 && exp <= 12) ||
+			(digit <= 28 && exp <= 11) ||
+			(digit <= 39 && exp <= 10) ||
+			(digit <= 59 && exp <= 9) ||
+			(digit <= 98 && exp <= 8) ||
+			(digit <= 190 && exp <= 7) ||
+			(digit <= 456 && exp <= 6) ||
+			(digit <= 1552 && exp <= 5) ||
+			(digit <= 9741 && exp <= 4) ||
+			(digit <= 208063 && exp <= 3) ||
+			(digit <= 94906265 && exp == 2))
+			return this.adopt(Math.pow(digit, exp));
+		// Otherwise, fall through to the slow path!
+	}
+	// Limit of 1e5 is experimentally determined.
+	// When I do smart pow (squaring+mul), there's effectively no limit,
+	// as number of multiplications is bounded at 2*digits.
+	var expLimit = 1e5;
+	if(exp > expLimit) throw "Pow is too slow with exponents greater than "+expLimit+". You tried "+exp+".";
 	var self = this.clone();
 	for(var i = 0; i < exp-1; i++) {
 		this.mul(self);
@@ -801,7 +834,7 @@ Z.prototype.clone = function() {
 Z.clone = Z.of;
 Z.prototype.adopt = function(that) {
 	// Mutates this to have the same value as that.
-	return Z.call(this, that);
+	return Z.call(this, Z.lift(that));
 }
 Z.adopt = function(a,b) {
 	return Z.lift(a).adopt(b);
