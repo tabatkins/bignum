@@ -862,6 +862,9 @@ Z.prototype.digitsInBase = function(base) {
 	} while(!num.isZero());
 	return digits.reverse();
 }
+Z.digitsInBase = function(a, base) {
+	return Z.lift(a).digitsInBase(base);
+}
 Z.prototype.toString = function(base) {
 	base = Math.floor(base || this.base);
 	if(base < 2 || base > 36)
@@ -870,6 +873,9 @@ Z.prototype.toString = function(base) {
 	if(this.sign == -1)
 		result = "-" + result;
 	return result;
+}
+Z.toString = function(a, base) {
+	return Z.lift(a).toString(base);
 }
 Z.prototype.__traceToString__ = function() { return "Z("+(this.sign<0?'-':'+')+this.digits+")"; }
 
