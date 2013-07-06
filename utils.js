@@ -558,7 +558,7 @@ Z.prototype._add = function(that) {
 	return this.normalize();
 }
 Z.add = function(a,b) {
-	return Z.lift(a).add(b);
+	return Z(a).add(b);
 }
 Z.prototype.sub = function(that) {
 	// Fast-path special cases.
@@ -575,7 +575,7 @@ Z.prototype.sub = function(that) {
 	return this._add(that.negate());
 }
 Z.sub = function(a,b) {
-	return Z.lift(a).sub(b);
+	return Z(a).sub(b);
 }
 Z.prototype.normalize = function() {
 	// Put every digit back into the range [0, 2^25)
@@ -607,13 +607,15 @@ Z.prototype.normalize = function() {
 	return this;
 }
 Z.normalize = function(a) {
-	return Z.lift(a).normalize();
+	return Z(a);
 }
 Z.prototype.negate = function() {
 	this.sign *= -1;
 	return this;
 }
-Z.negate = function(a) { return Z.lift(a).negate(); }
+Z.negate = function(a) { 
+	return Z(a).negate();
+}
 Z.prototype.mul = function(that) {
 	// Fast-path special cases.
 	if(this.isZero()) return this;
@@ -643,7 +645,7 @@ Z.prototype.mul = function(that) {
 	return this;
 }
 Z.mul = function(a,b) {
-	return Z.lift(a).mul(b);
+	return Z(a).mul(b);
 }
 Z.prototype.pow = function(exp) {
 	if(Z.isZero(exp)) return new Z(1);
@@ -693,7 +695,7 @@ Z.prototype.pow = function(exp) {
 	return this;
 }
 Z.pow = function(a,b) {
-	return Z.lift(a).pow(b);
+	return Z(a).pow(b);
 }
 Z.pow2 = function(exp) {
 	// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
@@ -757,7 +759,7 @@ Z._divmodFindFactor = function(divisor, remainder, low, high) {
 	return Z._divmodFindFactor(divisor, remainder, mid+1, high);
 }
 Z.divmod = function(a,b) {
-	return Z.lift(a).divmod(b);
+	return Z(a).divmod(b);
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
