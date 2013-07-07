@@ -770,7 +770,7 @@ Z.square = function(a) {
 }
 Z.prototype.powmod = function(exponent, modulus) {
 	if(Z.isZero(modulus)) throw "Division by 0 is not allowed.";
-	if(Z.isZero(exp)) return this.adopt(1);
+	if(Z.isZero(exponent)) return this.adopt(1);
 	if(this.isZero()) return this;
 	if(Z.toNum(exponent) == 1) return this.mod(modulus);
 	var digit;
@@ -784,6 +784,13 @@ Z.prototype.powmod = function(exponent, modulus) {
 		}
 		return this.adopt(accum);
 	}
+	var base = this.mod(modulus).clone();
+	var bitPattern = Z.digitsInBase(exponent, 2);
+	for(var i = 1; i < bitPattern.length; i++) {
+		this.square().mod(modulus);
+		if(bitPattern[i] == 1) this.mul(base).mod(modulus);
+	}
+	return this;
 }
 Z.powmod = function(a,b,c) {
 	return Z(a).powmod(b,c);
@@ -864,7 +871,9 @@ Z.prototype.mod = function(modulus, remainderPositive) {
 			this.digits[0] = digit - this.digits[0];
 		return this;
 	}
-	throw "Mod with a modulus >= Z.innerBase not yet implemented.";
+	// For now, just use the full divmod algo.
+	// Complexity of multi-digit mod is high enough to not be worth implementing yet.
+	return this.adopt(this.divmod(modulus, remainderPositive)[1]);
 }
 Z.mod = function(a,b,remainderPositive) {
 	return Z(a).mod(b, remainderPositive);
