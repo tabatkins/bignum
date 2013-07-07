@@ -818,6 +818,12 @@ Z._divmodFindFactor = function(divisor, remainder, low, high) {
 Z.divmod = function(a,b) {
 	return Z(a).divmod(b);
 }
+Z.prototype.div = function(divisor) {
+	return this.divmod(divisor)[0];
+}
+Z.div = function(a,b) {
+	return Z(a).divmod(b)[0];
+}
 Z.prototype.lt = function(that) {
 	that = new Z(that);
 	if(this.digits.length < that.digits.length) return true;
