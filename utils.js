@@ -713,7 +713,7 @@ Z.prototype.pow = function(exp) {
 	var originalBase = this.clone();
 	var bitPattern = Z.digitsInBase(exp, 2);
 	for(var i = 1; i < bitPattern.length; i++) {
-		this.mul(this);
+		this.square();
 		if(bitPattern[i] == 1) this.mul(originalBase);
 	}
 	return this;
@@ -734,6 +734,39 @@ Z.pow2 = function(exp) {
 	}
 	digits.push(Math.pow(2, exp));
 	return Z._fromDigits(digits);
+}
+Z.prototype.square = function() {
+	if(this.isZero()) return this;
+	this.sign = 1;  // Squaring always gives a positive number.
+	var digit;
+	if(digit = this.singleDigit()) {
+		this.digits[0] *= this.digits[0];
+		if(this.digits[0] >= Z.innerBase) this.normalize();
+		return this;
+	}
+	if(this.digits.length < 10) {
+		var self = this;
+		var result = self.digits.map(function(d, i) {
+			var digits = self.digits.map(function(d2){return d*d2;}).reverse();
+			for(;i > 0;i--) digits.push(0);
+			return Z._fromDigits(digits.reverse());
+		}).reduce(Z.add, Z(0));
+		this.digits = result.digits;
+		return this;
+	}
+	var chunkLength = Math.ceil(this.digits.length/2);
+	var high = Z._fromDigits(this.digits.slice(chunkLength));
+	this.digits.length = chunkLength; // truncate - one less copy!
+	var low = this;
+	var z0 = Z.square(high);
+	var z2 = Z.square(low);
+	var z1 = high.add(low).square().sub(z0).sub(z2);
+	var result = z0._shift(chunkLength*2).add(z1._shift(chunkLength)).add(z2);
+	this.digits = result.digits;
+	return this;
+}
+Z.square = function(a) {
+	return Z(a).square();
 }
 Z.prototype.divmod = function(divisor, remainderPositive) {
 	if(this.isZero()) return [this, 0];
