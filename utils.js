@@ -885,7 +885,14 @@ Z.toString = function(a, base) {
 	if(a instanceof Number || typeof a == "number") return a.toString(base);
 	return Z.lift(a).toString(base);
 }
+Z.prototype.valueOf = function() {
+	var val = this.toNum();
+	if(val !== false) return val;
+	return NaN;
+}
 Z.prototype.__traceToString__ = function() { return "Z("+(this.sign<0?'-':'+')+this.digits+")"; }
+
+
 
 String.prototype.repeat = function(num) {
 	return Array(num+1).join(this);
