@@ -773,17 +773,17 @@ Z.prototype.powmod = function(exponent, modulus) {
 	if(Z.isZero(exp)) return this.adopt(1);
 	if(this.isZero()) return this;
 	if(Z.toNum(exponent) == 1) return this.mod(modulus);
-	if(modulus = Z.singleDigit(modulus)) {
-		var base = this.mod(modulus).digits[0];
+	var digit;
+	if(digit = Z.singleDigit(modulus)) {
+		var base = this.mod(digit).digits[0];
 		var accum = base;
 		var bitPattern = Z.digitsInBase(exponent, 2);
 		for(var i = 1; i < bitPattern.length; i++) {
-			accum = accum * accum % modulus;
-			if(bitPattern[i] == 1) accum = accum * base % modulus;
+			accum = accum * accum % digit;
+			if(bitPattern[i] == 1) accum = accum * base % digit;
 		}
 		return this.adopt(accum);
 	}
-	throw "Mod with a modulus >= Z.innerBase not yet implemented.";
 }
 Z.powmod = function(a,b,c) {
 	return Z(a).powmod(b,c);
