@@ -789,8 +789,8 @@ Z.powmod = function(a,b,c) {
 	return Z(a).powmod(b,c);
 }
 Z.prototype.divmod = function(divisor, remainderPositive) {
+	if(Z.isZero(divisor)) throw "Division by 0 is not allowed.";
 	if(this.isZero()) return [this, 0];
-	if(Z.isZero(divisor)) throw "Dividing by 0 is invalid.";
 	if(Z.singleDigit(divisor)) {
 		divisor = Z.singleDigit(divisor);
 		if(this.singleDigit()) {
@@ -845,8 +845,8 @@ Z.div = function(a,b) {
 	return Z(a).divmod(b)[0];
 }
 Z.prototype.mod = function(modulus, remainderPositive) {
-	if(this.isZero()) return this;
 	if(Z.isZero(modulus)) throw "Division by 0 is not allowed.";
+	if(this.isZero()) return this;
 	var digit;
 	if(digit = Z.singleDigit(modulus)) {
 		if(this.toNum()) return this.adopt(this.toNum() % digit);
