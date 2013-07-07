@@ -824,6 +824,31 @@ Z.prototype.div = function(divisor) {
 Z.div = function(a,b) {
 	return Z(a).divmod(b)[0];
 }
+Z.prototype.mod = function(modulus, remainderPositive) {
+	if(this.isZero()) return this;
+	if(Z.isZero(modulus)) throw "Division by 0 is not allowed.";
+	var digit;
+	if(digit = Z.singleDigit(modulus)) {
+		if(this.toNum()) return this.adopt(this.toNum() % digit);
+		accumulatedBaseMod = 1;
+		var sum = 0;
+		for(var i = 0; i < this.digits.length; i++) {
+			sum = (this.digits[i]%digit * accumulatedBaseMod + sum) % digit;
+			accumulatedBaseMod = accumulatedBaseMod * Z.innerBase % digit;
+		}
+		this.digits[0] = sum;
+		this.digits.length = 1;
+		if(remainderPositive == "positive")
+			this.sign = 1;
+		else if (this.sign == -1)
+			this.digits[0] = digit - this.digits[0];
+		return this;
+	}
+	throw "Mod with a modulus >= Z.innerBase not yet implemented.";
+}
+Z.mod = function(a,b,remainderPositive) {
+	return Z(a).mod(b, remainderPositive);
+}
 Z.prototype.lt = function(that) {
 	that = new Z(that);
 	if(this.digits.length < that.digits.length) return true;
