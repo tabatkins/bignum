@@ -603,8 +603,10 @@ Z.prototype.normalize = function() {
 	var carry = 0;
 	for(var i = 0; i < this.length; i++) {
 		var digit = this.digits[i] + carry;
-		carry = Math.floor(digit / Z.innerBase);
-		this.digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
+		if(digit < 0 || digit >= Z.innerBase) {
+			carry = Math.floor(digit / Z.innerBase);
+			this.digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
+		}
 	}
 	// If final carry is negative, entire number was negative.
 	if(carry < 0) {
