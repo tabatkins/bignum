@@ -539,27 +539,40 @@ Z.prototype.add = function(that) {
 	if(Z.isZero(that)) return this;
 	if(this.isZero()) return this.adopt(that);
 	var digit;
-	if(digit = Z.singleDigit(that)) {
-		this.digits[0] += digit;
-		if(this.digits[0] >= Z.innerBase) this.normalize();
+	if(digit = Z.singleDigit(that, "allow-negative")) {
+		if(this.sign == 1) this.digits[0] += digit;
+		else this.digits[0] -= digit;
+		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this.normalize();
 		return this;
 	}
-	return this._add(new Z(that));
+	return this._add(Z.lift(that));
 }
 Z.prototype._add = function(that) {
-	// Destructive toward that as well - ensure it's fresh.
-	if(this.sign == -1) {
-		this.sign = 1;
-		for(var i = 0; i < this.digits.length; i++)
-			this.digits[i] *= -1;
+	// Expects that to be a Z.
+	// Non-destructive; this is just the shared slowpath for add/sub.
+	var thisSign = this.sign;
+	var thatSign = that.sign;
+	var len = Math.max(this.digits.length, that.digits.length);
+	if(thisSign == thatSign) {
+		for(var i = 0; i < len; i++) {
+			this.digits[i] = (this.digits[i]||0) + (that.digits[i]||0);
+		}
+		return this.normalize();
 	}
-	if(that.sign == -1)
-		for(var i = 0; i < that.digits.length; i++)
-			that.digits[i] *= -1;
-	var len = Math.max(this.length, that.length);
-	for(var i = 0; i < len; i++) {
-		this.digits[i] = (this.digits[i]||0) + (that.digits[i]||0);
+	this.sign = 1;
+	that.sign = 1;
+	if(this.ge(that)) {
+		for(var i = 0; i < len; i++) {
+			this.digits[i] = (this.digits[i]||0) - (that.digits[i]||0);
+		}
+		this.sign = thisSign;
+	} else {
+		for(var i = 0; i < len; i++) {
+			this.digits[i] = (that.digits[i]||0) - (this.digits[i]||0);
+		}
+		this.sign = thatSign;
 	}
+	that.sign = thatSign;
 	return this.normalize();
 }
 Z.add = function(a,b) {
@@ -570,14 +583,17 @@ Z.prototype.sub = function(that) {
 	if(Z.isZero(that)) return this;
 	if(this.isZero()) return this.adopt(that).negate();
 	var digit;
-	if(digit = Z.singleDigit(that)) {
-		this.digits[0] -= digit;
-		if(this.digits[0] <= 0) this.normalize();
+	if(digit = Z.singleDigit(that, "allow-negative")) {
+		if(this.sign == 1) this.digits[0] -= digit;
+		else this.digits[0] += digit;
+		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this.normalize();
 		return this;
 	}
 	// General case
-	that = new Z(that);
-	return this._add(that.negate());
+	that = Z.lift(that).negate()
+	this._add(that);
+	that.negate(); // Restore original sign of that.
+	return this;
 }
 Z.sub = function(a,b) {
 	return Z(a).sub(b);
@@ -921,15 +937,21 @@ Z.isZero = function(a) {
 	if(a instanceof Number || typeof a == "number") return a == 0;
 	return Z.lift(a).isZero();
 }
-Z.prototype.singleDigit = function() {
+Z.prototype.singleDigit = function(allowNegative) {
 	// Many functions can be optimized for single-digit Zs.
 	// If the Z is single-digit, returns that digit. This is a truthy value.
 	// Note, this returns false for 0; use isZero() instead.
-	if(this.digits.length == 1 && this.sign == 1) return this.digits[0];
+	if(this.digits.length == 1) {
+		if(allowNegative === "allow-negative") return this.digits[0] * this.sign;
+		if(this.sign == 1) return this.digits[0];
+	}
 	return false;
 }
-Z.singleDigit = function(a) {
-	if((a instanceof Number || typeof a == "number") && a > 0 && a < Z.innerBase) return a;
+Z.singleDigit = function(a, allowNegative) {
+	if((a instanceof Number || typeof a == "number") && a < Z.innerBase) {
+		if(a > 0) return a;	
+		if(allowNegative == "allow-negative" && a > -Z.innerBase) return a;
+	} 
 	return Z.lift(a).singleDigit();
 }
 Z.prototype.toNum = function() {
