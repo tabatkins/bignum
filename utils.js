@@ -638,15 +638,38 @@ Z.prototype.mul = function(that) {
 	}
 	// General case.
 	that = Z.lift(that);
+	var answerSign = this.sign * that.sign;
 	var longer = this.digits.length > that.digits.length ? this : that;
 	var shorter = this.digits.length <= that.digits.length ? this : that;
-	var result = shorter.digits.map(function(d, i) {
-		var digits = longer.digits.map(function(d2){return d*d2;}).reverse();
-		for(;i > 0;i--) digits.push(0);
-		return Z._fromDigits(digits.reverse());
-	}).reduce(Z.add, Z(0));
-	this.digits = result.digits;
-	this.sign *= that.sign;
+	if(shorter.digits.length < 10) { // Experimentally determined bound.
+		var result = shorter.digits.map(function(d, i) {
+			var digits = longer.digits.map(function(d2){return d*d2;}).reverse();
+			for(;i > 0;i--) digits.push(0);
+			return Z._fromDigits(digits.reverse());
+		}).reduce(Z.add, Z(0));
+		this.digits = result.digits;
+	} else {
+		// Karatsuba algorithm
+		var chunkLength = Math.ceil(longer.digits.length/2);
+		var a2 = Z._fromDigits(this.digits.slice(0, chunkLength));
+		var a1 = Z._fromDigits(this.digits.slice(chunkLength));
+		var b2 = Z._fromDigits(that.digits.slice(0, chunkLength));
+		var b1 = Z._fromDigits(that.digits.slice(chunkLength));
+		var z0 = Z.mul(a1, b1);
+		var z2 = Z.mul(a2, b2);
+		var z1 = a1.add(a2).mul(b1.add(b2)).sub(z0).sub(z2);
+		var result = z0._shift(chunkLength*2).add(z1._shift(chunkLength)).add(z2);
+		this.digits = result.digits;
+	}
+	this.sign = answerSign;
+	return this;
+}
+Z.prototype._shift = function(digits) {
+	if(this.digits.length == 0) return this;
+	this.digits.reverse();
+	for(var i = 0; i < digits; i++)
+		this.digits.push(0);
+	this.digits.reverse();
 	return this;
 }
 Z.mul = function(a,b) {
