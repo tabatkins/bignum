@@ -644,10 +644,10 @@ Z.prototype.mul = function(that) {
 	if(this.isZero()) return this;
 	if(Z.isZero(that)) { this.digits = []; return this; }
 	var thisDigit, thatDigit;
-	if(thatDigit = Z.singleDigit(that)) {
+	if(thatDigit = Z.singleDigit(that, "allow-negative")) {
 		if(thisDigit = this.singleDigit()) {
 			this.digits = [thisDigit * thatDigit];
-			if(this.digits[0] >= Z.innerBase) this.normalize();
+			if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this.normalize();
 			return this;
 		}
 		for(var i = 0; i < this.digits.length; i++)
