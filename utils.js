@@ -650,18 +650,25 @@ Z.prototype.mul = function(that) {
 	// General case.
 	that = Z.lift(that);
 	var answerSign = this.sign * that.sign;
-	var longer = this.digits.length > that.digits.length ? this : that;
-	var shorter = this.digits.length <= that.digits.length ? this : that;
-	if(shorter.digits.length < 10) { // Experimentally determined bound.
-		var result = shorter.digits.map(function(d, i) {
-			var digits = longer.digits.map(function(d2){return d*d2;}).reverse();
-			for(;i > 0;i--) digits.push(0);
-			return Z._fromDigits(digits.reverse());
-		}).reduce(Z.add, Z(0));
-		this.digits = result.digits;
+	var thisLength = this.digits.length;
+	var thatLength = that.digits.length;
+	if(thisLength < 10 || thatLength < 10) { // Experimentally determined bound.
+		var thisClone = this.clone();
+		// Preload this with first multiplication.
+		var thatDigit = that.digits[0];
+		for(var i = 0; i < thisLength; i++)
+			this.digits[i] *= thatDigit;
+		for(var thatIndex = 1; thatIndex < thatLength; thatIndex++) {
+			var thatDigit = that.digits[thatIndex];
+			for(var thisIndex = 0; thisIndex < thisLength; thisIndex++) {
+				this.digits[thisIndex+thatIndex] = (this.digits[thisIndex+thatIndex]||0) + thisClone.digits[thisIndex] * thatDigit;
+			}
+			// I have enough wiggle room that 6 or 7 additions can be done without normalizing.
+			if(thatIndex%8 == 6) this.normalize();
+		}
 	} else {
 		// Karatsuba algorithm
-		var chunkLength = Math.ceil(longer.digits.length/2);
+		var chunkLength = Math.ceil(thisLength > thatLength ? thisLength/2 : thatLength/2);
 		var a2 = Z._fromDigits(this.digits.slice(0, chunkLength));
 		var a1 = Z._fromDigits(this.digits.slice(chunkLength));
 		var b2 = Z._fromDigits(that.digits.slice(0, chunkLength));
