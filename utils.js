@@ -603,10 +603,8 @@ Z.prototype.normalize = function() {
 	var carry = 0;
 	for(var i = 0; i < this.length; i++) {
 		var digit = this.digits[i] + carry;
-		if(digit < 0 || digit >= Z.innerBase) {
-			carry = Math.floor(digit / Z.innerBase);
-			this.digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
-		}
+		carry = Math.floor(digit / Z.innerBase);
+		this.digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
 	}
 	// If final carry is negative, entire number was negative.
 	if(carry < 0) {
@@ -645,11 +643,6 @@ Z.prototype.mul = function(that) {
 	if(Z.isZero(that)) { this.digits = []; return this; }
 	var thisDigit, thatDigit;
 	if(thatDigit = Z.singleDigit(that, "allow-negative")) {
-		if(thisDigit = this.singleDigit()) {
-			this.digits = [thisDigit * thatDigit];
-			if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this.normalize();
-			return this;
-		}
 		for(var i = 0; i < this.digits.length; i++)
 			this.digits[i] *= thatDigit;
 		return this.normalize();
