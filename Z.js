@@ -234,7 +234,8 @@ Z.prototype.mul = function(that) {
 	var answerSign = this.sign * that.sign;
 	var thisLength = this.digits.length;
 	var thatLength = that.digits.length;
-	if(thisLength < 10 || thatLength < 10) { // Experimentally determined bound.
+	var karatsubaBound = 25; // Experimentally determined, but could still be +- 5 or so.
+	if(thisLength < karatsubaBound || thatLength < karatsubaBound) {
 		var thisClone = this.clone();
 		// Preload this with first multiplication.
 		var thatDigit = that.digits[0];
