@@ -124,7 +124,7 @@ Z.prototype.add = function(that) {
 	if(Z.isZero(that)) return this;
 	if(this.isZero()) return this.adopt(that);
 	var digit;
-	if(digit = Z.singleDigit(that, "allow-negative")) {
+	if(digit = Z._singleDigit(that, "allow-negative")) {
 		if(this.sign == 1) this.digits[0] += digit;
 		else this.digits[0] -= digit;
 		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this._normalize();
@@ -168,7 +168,7 @@ Z.prototype.sub = function(that) {
 	if(Z.isZero(that)) return this;
 	if(this.isZero()) return this.adopt(that).negate();
 	var digit;
-	if(digit = Z.singleDigit(that, "allow-negative")) {
+	if(digit = Z._singleDigit(that, "allow-negative")) {
 		if(this.sign == 1) this.digits[0] -= digit;
 		else this.digits[0] += digit;
 		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this._normalize();
@@ -224,7 +224,7 @@ Z.prototype.mul = function(that) {
 	if(this.isZero()) return this;
 	if(Z.isZero(that)) { this.digits = []; return this; }
 	var thisDigit, thatDigit;
-	if(thatDigit = Z.singleDigit(that, "allow-negative")) {
+	if(thatDigit = Z._singleDigit(that, "allow-negative")) {
 		for(var i = 0; i < this.digits.length; i++)
 			this.digits[i] *= thatDigit;
 		return this._normalize();
@@ -283,7 +283,7 @@ Z.prototype.pow = function(exp) {
 	if(expDigit == 1) return this;
 	if(expDigit == 2) return this.mul(this);
 	var digit;
-	if(expDigit && (digit = this.singleDigit())) {
+	if(expDigit && (digit = this._singleDigit())) {
 		if(digit == 1) return this; // 1^n = 1
 		// Power of 2 fast-paths
 		for(var i = 1; i < 25; i++) {
@@ -336,7 +336,7 @@ Z.prototype.square = function() {
 	if(this.isZero()) return this;
 	this.sign = 1;  // Squaring always gives a positive number.
 	var digit;
-	if(digit = this.singleDigit()) {
+	if(digit = this._singleDigit()) {
 		this.digits[0] *= this.digits[0];
 		if(this.digits[0] >= Z.innerBase) this._normalize();
 		return this;
@@ -371,7 +371,7 @@ Z.prototype.powmod = function(exponent, modulus) {
 	if(this.isZero()) return this;
 	if(Z.toNum(exponent) == 1) return this.mod(modulus);
 	var digit;
-	if(digit = Z.singleDigit(modulus)) {
+	if(digit = Z._singleDigit(modulus)) {
 		var base = this.mod(digit).digits[0];
 		var accum = base;
 		var bitPattern = Z.digitsInBase(exponent, 2);
@@ -395,10 +395,10 @@ Z.powmod = function(a,b,c) {
 Z.prototype.divmod = function(divisor, remainderPositive) {
 	if(Z.isZero(divisor)) throw "Division by 0 is not allowed.";
 	if(this.isZero()) return [this, 0];
-	if(Z.singleDigit(divisor)) {
-		divisor = Z.singleDigit(divisor);
-		if(this.singleDigit()) {
-			var dividend = this.singleDigit();
+	if(Z._singleDigit(divisor)) {
+		divisor = Z._singleDigit(divisor);
+		if(this._singleDigit()) {
+			var dividend = this._singleDigit();
 			return [Z(Math.floor(dividend/divisor)), dividend % divisor];
 		}
 		var mod = 0;
@@ -452,7 +452,7 @@ Z.prototype.mod = function(modulus, remainderPositive) {
 	if(Z.isZero(modulus)) throw "Division by 0 is not allowed.";
 	if(this.isZero()) return this;
 	var digit;
-	if(digit = Z.singleDigit(modulus)) {
+	if(digit = Z._singleDigit(modulus)) {
 		if(this.toNum()) return this.adopt(this.toNum() % digit);
 		accumulatedBaseMod = 1;
 		var sum = 0;
@@ -518,7 +518,7 @@ Z.isZero = function(a) {
 	if(a instanceof Number || typeof a == "number") return a == 0;
 	return Z.lift(a).isZero();
 }
-Z.prototype.singleDigit = function(allowNegative) {
+Z.prototype._singleDigit = function(allowNegative) {
 	// Many functions can be optimized for single-digit Zs.
 	// If the Z is single-digit, returns that digit. This is a truthy value.
 	// Note, this returns false for 0; use isZero() instead.
@@ -528,17 +528,17 @@ Z.prototype.singleDigit = function(allowNegative) {
 	}
 	return false;
 }
-Z.singleDigit = function(a, allowNegative) {
+Z._singleDigit = function(a, allowNegative) {
 	if((a instanceof Number || typeof a == "number") && a < Z.innerBase) {
 		if(a > 0) return a;	
 		if(allowNegative == "allow-negative" && a > -Z.innerBase) return a;
 	} 
-	return Z.lift(a).singleDigit();
+	return Z.lift(a)._singleDigit();
 }
 Z.prototype.toNum = function() {
 	// Converts the Z into a JS num, if possible; otherwise returns false.
 	if(this.isZero()) return 0;
-	if(this.singleDigit()) return this.singleDigit() * this.sign;
+	if(this._singleDigit()) return this._singleDigit() * this.sign;
 	if(this.digits.length == 2) return (this.digits[0] + this.digits[1]*Z.innerBase)*this.sign;
 	if(this.digits.length == 3 && this.digits[3] < 8)
 		return (this.digits[0] + this.digits[1]*Z.innerBase + this.digits[2]*Z.innerBase*Z.innerBase)*this.sign;
