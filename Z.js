@@ -15,7 +15,7 @@ function Z(num, base) {
 		return Z._fromArray(num, base);
 	} else if(num instanceof Z) {
 		this.digits = num.digits.slice();
-		return this.normalize();
+		return this._normalize();
 	} else {
 		throw TypeError("Can't understand type of first argument.");
 	}
@@ -127,7 +127,7 @@ Z.prototype.add = function(that) {
 	if(digit = Z.singleDigit(that, "allow-negative")) {
 		if(this.sign == 1) this.digits[0] += digit;
 		else this.digits[0] -= digit;
-		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this.normalize();
+		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this._normalize();
 		return this;
 	}
 	return this._add(Z.lift(that));
@@ -142,7 +142,7 @@ Z.prototype._add = function(that) {
 		for(var i = 0; i < len; i++) {
 			this.digits[i] = (this.digits[i]||0) + (that.digits[i]||0);
 		}
-		return this.normalize();
+		return this._normalize();
 	}
 	this.sign = 1;
 	that.sign = 1;
@@ -158,7 +158,7 @@ Z.prototype._add = function(that) {
 		this.sign = thatSign;
 	}
 	that.sign = thatSign;
-	return this.normalize();
+	return this._normalize();
 }
 Z.add = function(a,b) {
 	return Z(a).add(b);
@@ -171,7 +171,7 @@ Z.prototype.sub = function(that) {
 	if(digit = Z.singleDigit(that, "allow-negative")) {
 		if(this.sign == 1) this.digits[0] -= digit;
 		else this.digits[0] += digit;
-		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this.normalize();
+		if(this.digits[0] < 0 || this.digits[0] >= Z.innerBase) this._normalize();
 		return this;
 	}
 	// General case
@@ -183,7 +183,7 @@ Z.prototype.sub = function(that) {
 Z.sub = function(a,b) {
 	return Z(a).sub(b);
 }
-Z.prototype.normalize = function() {
+Z.prototype._normalize = function() {
 	// Put every digit back into the range [0, 2^25)
 	var carry = 0;
 	for(var i = 0; i < this.length; i++) {
@@ -212,9 +212,6 @@ Z.prototype.normalize = function() {
 	}
 	return this;
 }
-Z.normalize = function(a) {
-	return Z(a);
-}
 Z.prototype.negate = function() {
 	this.sign *= -1;
 	return this;
@@ -230,7 +227,7 @@ Z.prototype.mul = function(that) {
 	if(thatDigit = Z.singleDigit(that, "allow-negative")) {
 		for(var i = 0; i < this.digits.length; i++)
 			this.digits[i] *= thatDigit;
-		return this.normalize();
+		return this._normalize();
 	}
 	// General case.
 	that = Z.lift(that);
@@ -250,7 +247,7 @@ Z.prototype.mul = function(that) {
 				this.digits[thisIndex+thatIndex] = (this.digits[thisIndex+thatIndex]||0) + thisClone.digits[thisIndex] * thatDigit;
 			}
 			// I have enough wiggle room that 6 or 7 additions can be done without normalizing.
-			if(thatIndex%6 == 0) this.normalize();
+			if(thatIndex%6 == 0) this._normalize();
 		}
 	} else {
 		// Karatsuba algorithm
@@ -341,7 +338,7 @@ Z.prototype.square = function() {
 	var digit;
 	if(digit = this.singleDigit()) {
 		this.digits[0] *= this.digits[0];
-		if(this.digits[0] >= Z.innerBase) this.normalize();
+		if(this.digits[0] >= Z.innerBase) this._normalize();
 		return this;
 	}
 	if(this.digits.length < 10) {
@@ -411,7 +408,7 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 			this.digits[i] = Math.floor(digit / divisor);
 		}
 		if(mod < 0 && remainderPositive == "positive") mod += divisor;
-		return [this.normalize(), mod];
+		return [this._normalize(), mod];
 	} else {
 		divisor = Z.lift(divisor);
 		remainder = new Z(0);
@@ -427,11 +424,11 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 			this.digits[i] = factor;
 			remainder.sub(Z(factor).mul(divisor)); // replace with mod later
 		}
-		this.normalize();
+		this._normalize();
 		remainder.sign = this.sign;
 		this.sign *= divisor.sign;
 		if(remainder.isNeg() && remainderPositive == "positive") remainder.add(divisor);
-		return [this.normalize(), remainder];
+		return [this._normalize(), remainder];
 	}
 }
 Z._divmodFindFactor = function(divisor, remainder, low, high) {
