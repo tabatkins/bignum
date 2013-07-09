@@ -658,13 +658,14 @@ Z.prototype.mul = function(that) {
 		var thatDigit = that.digits[0];
 		for(var i = 0; i < thisLength; i++)
 			this.digits[i] *= thatDigit;
+		// Manually push multiplied digits from thisClone directly into this, shifted appropriately.
 		for(var thatIndex = 1; thatIndex < thatLength; thatIndex++) {
 			var thatDigit = that.digits[thatIndex];
 			for(var thisIndex = 0; thisIndex < thisLength; thisIndex++) {
 				this.digits[thisIndex+thatIndex] = (this.digits[thisIndex+thatIndex]||0) + thisClone.digits[thisIndex] * thatDigit;
 			}
 			// I have enough wiggle room that 6 or 7 additions can be done without normalizing.
-			if(thatIndex%8 == 6) this.normalize();
+			if(thatIndex%6 == 0) this.normalize();
 		}
 	} else {
 		// Karatsuba algorithm
