@@ -5,6 +5,8 @@ Javascript's native Number type is a double: a 64-bit floating point number.  Th
 
 Currently, the library consists of one class, named Z after the common name for the integers.  Z can hold arbitrary-sized integers with perfect precision.  Soon I plan to add a Q class for ratios, then likely a C class for complex numbers, and finally might look into either an algebraic number class or a limited (but arbitrarily-high) precision floating-point class.
 
+While I have done decent amounts of work to make this library fast and efficient, I'm sure there's plenty more to do.  Pull Requests that can improve speed without drastically killing readability are much appreciated!
+
 Arbitrary-size Integers - the Z class
 -------------------------------------
 
@@ -56,7 +58,7 @@ Finally, several utility functions exist:
 
 A Z can also be used directly in expressions with strings or JS numbers - it'll autoconvert itself into the appropriate type.  (Possible issue - when concatenated with a string, it appears to trigger .valueOf() first, which means it'll concat "NaN" rather than a string version of the number when the number is large enough.  I might just need to remove the .valueOf() entirely.)
 
-**Important note:**  All of the Z instance methods that return a Z do so by *mutating the this argument directly, and returning it*.  That is, in `var y = x.mul(3);` not only is y set to x*3, but x itself now equals three times what it used to.  To avoid this, use the static variants of the methods.
+**Important note:**  All of the Z instance methods that return a Z do so by *mutating the this argument directly, and returning it*.  That is, in `var y = x.mul(3);` not only is y set to x*3, but x itself is now triple what it used to.  To avoid this, use the static variants of the methods.  (This behavior is absolutely required for high performance, where creating new objects in every operation is unacceptably slow.)
 
 ### Using the Z methods statically ###
 
