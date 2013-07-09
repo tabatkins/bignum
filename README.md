@@ -46,7 +46,7 @@ There are several ways to create a new Z out of an existing value:
 Finally, several utility functions exist:
 
 * .sign - An attribute, not a function, containing -1, 0, or 1, if the number is negative, zero, or positive, respectively.  This can be directly set, as well.
-* .negate() - Negates the number. (Faster than calling `x.mul(-1)`.)
+* .negate() - Negates the number. (Faster than calling `x.mul(-1)`, clearer and more chainable than calling `x.sign *= -1;`.)
 * .isPos() - True if the number is positive (`x.sign` returns 1), false otherwise.
 * .isNeg() - True if the number is negative, false otherwise.
 * .isZero() - True if the number is zero, false otherwise.
