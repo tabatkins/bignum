@@ -290,7 +290,7 @@ Z.prototype.pow = function(exp) {
 		if(digit == 1) return this; // 1^n = 1
 		// Power of 2 fast-paths
 		for(var i = 1; i < 25; i++) {
-			if(digit == Math.pow(2,i) && expDigit*i <= Math.MAX_INT) return this.adopt(Z.pow2(expDigit*i));
+			if(digit == Math.pow(2,i) && expDigit*i <= Math.MAX_INT) return this.adopt(Z._pow2(expDigit*i));
 		}
 		// Computable within JS num limits (answer is less than 2^53)
 		if(	(digit == 3 && expDigit <= 33) ||
@@ -325,19 +325,15 @@ Z.prototype.pow = function(exp) {
 Z.pow = function(a,b) {
 	return Z(a).pow(b);
 }
-Z.pow2 = function(exp) {
+Z._pow2 = function(exp) {
 	// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
-	if(Z.isZero(exp)) return new Z(1);
-	exp = Z.toNum(exp);
-	if(!exp) throw "Pow2 not yet implemented for numbers greater than Math.MAX_INT."
-	if(exp != Math.floor(exp)) throw "Pow2 must be called with integer exponent.";
-	var digits = [];
+	var n = Z(0);
 	while(exp >= 25) {
-		digits.push(0);
+		n.digits.push(0);
 		exp -= 25; // innerBase exponent
 	}
-	digits.push(Math.pow(2, exp));
-	return Z._fromDigits(digits);
+	n.digits.push(Math.pow(2, exp));
+	return n;
 }
 Z.prototype.square = function() {
 	if(this.isZero()) return this;
