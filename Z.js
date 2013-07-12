@@ -236,7 +236,7 @@ Z.prototype.mul = function(that) {
 	var thatLength = that.digits.length;
 	var karatsubaBound = 25; // Experimentally determined, but could still be +- 5 or so.
 	if(thisLength < karatsubaBound || thatLength < karatsubaBound) {
-		var thisClone = this.clone();
+		var thisDigits = this.digits.slice();
 		// Preload this with first multiplication.
 		var thatDigit = that.digits[0];
 		for(var i = 0; i < thisLength; i++)
@@ -245,7 +245,7 @@ Z.prototype.mul = function(that) {
 		for(var thatIndex = 1; thatIndex < thatLength; thatIndex++) {
 			var thatDigit = that.digits[thatIndex];
 			for(var thisIndex = 0; thisIndex < thisLength; thisIndex++) {
-				this.digits[thisIndex+thatIndex] = (this.digits[thisIndex+thatIndex]||0) + thisClone.digits[thisIndex] * thatDigit;
+				this.digits[thisIndex+thatIndex] = (this.digits[thisIndex+thatIndex]||0) + thisDigits[thisIndex] * thatDigit;
 			}
 			// I have enough wiggle room that 6 or 7 additions can be done without normalizing.
 			if(thatIndex%6 == 0) this._normalize();
