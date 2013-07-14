@@ -476,6 +476,14 @@ Z.prototype.mod = function(modulus, remainderPositive) {
 Z.mod = function(a,b,remainderPositive) {
 	return Z(a).mod(b, remainderPositive);
 }
+Z.fact = function(num) {
+	num = Z.toNum(num);
+	if(num === false) throw "Keep your factorials less than Math.MAX_INT, please."
+	var product = Z(1);
+	for(var i = 2; i <= num; i++)
+		product.mul(i);
+	return product;
+}
 Z.prototype.lt = function(that) {
 	that = new Z(that);
 	if(this.digits.length < that.digits.length) return true;
