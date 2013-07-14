@@ -420,7 +420,7 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 				// Fast-path, since this'll be common and it's slow to find via binary-search.
 				var factor = 0;
 			} else {
-				var factor = Z._divmodFindFactor(divisor, remainder, 0, Z.innerBase-1);
+				var factor = Z._divmodFindFactor(divisor, remainder, 1, Z.innerBase-1);
 			}
 			this.digits[i] = factor;
 			remainder.sub(Z(factor).mul(divisor)); // replace with mod later
@@ -432,13 +432,19 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 		return [this._normalize(), remainder];
 	}
 }
-Z._divmodFindFactor = function(divisor, remainder, low, high) {
-	// Binary search to find largest n that satisfies `divisor * n <= remainder`
-	var mid = Math.ceil((low+high)/2);
-	var mul = Z(mid).mul(divisor);
-	if(mul.gt(remainder)) return Z._divmodFindFactor(divisor, remainder, low, mid-1);
-	if(mul.eq(remainder) || Z(mul).add(divisor).gt(remainder)) return mid;
-	return Z._divmodFindFactor(divisor, remainder, mid+1, high);
+Z._divmodFindFactor = function(factor1, product, low, high) {
+	// Binary search to find largest n that satisfies `factor1 * n <= product`
+	while(true) {
+		var n = Math.ceil((low+high)/2);
+		var candidateProduct = Z.mul(factor1, n);
+		if(candidateProduct.gt(product)) {
+			high = n-1; continue;
+		} else if(Z.add(candidateProduct, factor1).gt(product)) {
+			return n;
+		} else {
+			low = n+1; continue;
+		}
+	}
 }
 Z.divmod = function(a,b) {
 	return Z(a).divmod(b);
