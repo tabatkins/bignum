@@ -1,6 +1,8 @@
 <!doctype html>
 <title>Bignum test page</title>
-<script src="Z.js"></script>
+<meta charset=utf-8>
+<script type="application/javascript;version=1.8" src="primes.js"></script>
+<script type="application/javascript;version=1.8" src="Z.js"></script>
 <script>
 function time(func/*, args*/) {
 	var args = [].slice.call(arguments,1);
@@ -10,8 +12,8 @@ function time(func/*, args*/) {
 	if(answer !== undefined) console.log(answer);
 	return end-start;
 }
-x = Z.pow(3,50000);
-y = Z.pow(5,50000);
+//x = Z.pow(3,50000);
+//y = Z.pow(5,50000);
 </script>
 <p>
 	This page exists only to make it more convenient to test the classes.  It has all the bignum classes loaded up already.  Use the browser's console to test things.  Additionally, a <code>time()</code> function has been defined, which takes a function, times its execution, and returns the results.

@@ -89,7 +89,7 @@ Z._fromDigits = function(digits) {
 	result.digits = digits;
 	return result;
 }
-Z.innerBase = Math.pow(2,25);
+Z.innerBase = Math.pow(10,3);
 Z.defaultBase = 10;
 Object.defineProperty(Z.prototype, "length", {
 	get: function() { return this.digits.length; }
@@ -400,7 +400,7 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 		divisor = Z._singleDigit(divisor);
 		if(this._singleDigit()) {
 			var dividend = this._singleDigit();
-			return [Z(Math.floor(dividend/divisor)), dividend % divisor];
+			return [this.adopt(Math.floor(dividend/divisor)), Z(dividend % divisor)];
 		}
 		var mod = 0;
 		for(var i = this.length-1; i >= 0; i--) {
@@ -409,7 +409,7 @@ Z.prototype.divmod = function(divisor, remainderPositive) {
 			this.digits[i] = Math.floor(digit / divisor);
 		}
 		if(mod < 0 && remainderPositive == "positive") mod += divisor;
-		return [this._normalize(), mod];
+		return [this._normalize(), Z(mod)];
 	} else {
 		divisor = Z.lift(divisor);
 		remainder = new Z(0);
@@ -489,6 +489,26 @@ Z.fact = function(num) {
 	for(var i = 2; i <= num; i++)
 		product.mul(i);
 	return product;
+}
+Z.prototype.factorize = function() {
+	let digit;
+	if(digit = this._singleDigit()) {
+		return Primes.factorize(digit);
+	}
+	let factors = new Map();
+	let num = this.clone();
+	let i = 0;
+	for(let p of Primes.primes(Z)) {
+		let count = Z(0);
+		while(Z.mod(num, p).isZero()) {
+			count.add(1);
+			num.div(p);
+		}
+		if(count.isPos())
+			factors.set(Z(p), count);
+		if(num._singleDigit() === 1)
+			return factors;
+	}
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
