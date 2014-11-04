@@ -89,7 +89,7 @@ Z._fromDigits = function(digits) {
 	result.digits = digits;
 	return result;
 }
-Z.innerBase = Math.pow(10,3);
+Z.innerBase = Math.pow(2, 25);
 Z.defaultBase = 10;
 Object.defineProperty(Z.prototype, "length", {
 	get: function() { return this.digits.length; }
