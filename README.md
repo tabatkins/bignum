@@ -64,6 +64,6 @@ A Z can also be used directly in expressions with strings or JS numbers - it'll 
 
 Every method defined on a Z *instance* also exists on the Z *class object*, taking an additional first argument.  For example, instead of `x.mul(y)`, you can call `Z.mul(x,y)`.  Even `.sign` has a static variant in `Z.sign(n)`.
 
-The static variants work the same as their instance variants, except that they **don't** mutate any of their arguments.  This is usually accomplished by just cloning the first argument, so most of the static variants imply an extry object creation over their instance variant.
+The static variants work the same as their instance variants, except that they **don't** mutate any of their arguments.  This is usually accomplished by just cloning the first argument, so most of the static variants imply an extra object creation over their instance variant.
 
 The static variants are often most convenient for just constructing a large number directly, like `Z.pow(3, 1000)` (rather than `Z(3).pow(1000)`, which I find slightly clumsier to read and write).
