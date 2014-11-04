@@ -282,7 +282,7 @@ Z.prototype.pow = function(exp) {
 	if(this.isZero()) return this; // 0^n = 0 (Except 0^0=1, caught by previous line.)
 	expDigit = Z.toNum(exp);
 	if(expDigit == 1) return this;
-	if(expDigit == 2) return this.mul(this);
+	if(expDigit == 2) return this.square();
 	var digit;
 	if(expDigit && (digit = this._singleDigit())) {
 		if(digit == 1) return this; // 1^n = 1
