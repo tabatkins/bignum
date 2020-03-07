@@ -15,6 +15,7 @@ function Z(num, base) {
 		return Z._fromArray(num, base);
 	} else if(num instanceof Z) {
 		this.digits = num.digits.slice();
+		this.sign = num.sign;
 		return this._normalize();
 	} else {
 		throw TypeError("Can't understand type of first argument.");
@@ -393,14 +394,15 @@ Z.prototype.powmod = function(exponent, modulus) {
 Z.powmod = function(a,b,c) {
 	return Z(a).powmod(b,c);
 }
-Z.prototype.divmod = function(divisor, remainderPositive) {
+Z.prototype.divmod = function(divisor, modOrRem="rem") {
 	if(Z.isZero(divisor)) throw "Division by 0 is not allowed.";
 	if(this.isZero()) return [this, Z(0)];
-	if(Z._singleDigit(divisor)) {
-		divisor = Z._singleDigit(divisor);
-		if(this._singleDigit()) {
-			var dividend = this._singleDigit();
-			return [this.adopt(Math.floor(dividend/divisor)), Z(dividend % divisor)];
+	if(Z._singleDigit(divisor, "allow-negative")) {
+		divisor = Z._singleDigit(divisor, "allow-negative");
+		if(this._singleDigit("allow-negative")) {
+			var dividend = this._singleDigit("allow-negative");
+			if(modOrRem == "rem") return [this.adopt(Math.trunc(dividend/divisor)), Z(dividend % divisor)];
+			else return [this.adopt(Math.floor(dividend/divisor)), Z(((dividend % divisor)+divisor)%divisor)];
 		}
 		var mod = 0;
 		for(var i = this.length-1; i >= 0; i--) {
@@ -574,7 +576,7 @@ Z._singleDigit = function(a, allowNegative) {
 Z.prototype.toNum = function() {
 	// Converts the Z into a JS num, if possible; otherwise returns false.
 	if(this.isZero()) return 0;
-	if(this._singleDigit()) return this._singleDigit() * this.sign;
+	if(this._singleDigit("allow-negative")) return this._singleDigit("allow-negative");
 	if(this.digits.length == 2) return (this.digits[0] + this.digits[1]*Z.innerBase)*this.sign;
 	if(this.digits.length == 3 && this.digits[3] < 8)
 		return (this.digits[0] + this.digits[1]*Z.innerBase + this.digits[2]*Z.innerBase*Z.innerBase)*this.sign;
@@ -627,6 +629,8 @@ Z.prototype.toString = function(base) {
 	base = Math.floor(base || this.base);
 	if(base < 2 || base > 36)
 		throw TypeError("Can only toString a Z when 2 <= base <= 36.");
+	var s;
+	if(s = this._singleDigit("allow-negative")) return s;
 	var result = this.digitsInBase(base).map(function(x){return x.toNum().toString(base);}).join('');
 	if(this.sign == -1)
 		result = "-" + result;
