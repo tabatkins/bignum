@@ -417,7 +417,9 @@ Z.prototype.divmod = function(divisor, modOrRem="rem") {
 		remainder = new Z(0);
 		for(var i = this.digits.length -1; i >= 0; i--) {
 			var digit = this.digits[i];
-			remainder.digits.unshift(digit);
+			if (digit !== 0 || !remainder.isZero()) {
+				remainder.digits.unshift(digit);
+			}
 			if(remainder.lt(divisor)) {
 				// Fast-path, since this'll be common and it's slow to find via binary-search.
 				var factor = 0;
