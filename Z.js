@@ -512,10 +512,11 @@ Z.prototype.factorize = function() {
 }
 Z.prototype.lt = function(that) {
 	that = new Z(that);
-	if(this.digits.length < that.digits.length) return true;
-	if(this.digits.length > that.digits.length) return false;
-	if(this.sign < that.sign) return true;
-	if(this.sign > that.sign) return false;
+	if(this.sign != that.sign) return this.sign < that.sign;
+	if(this.digits.length != that.digits.length) {
+		if(this.sign == 1) return this.digits.length < that.digits.length;
+		else return this.digits.length > that.digits.length;
+	}
 	for(var i = this.length - 1; i >= 0; i--) {
 		if(this.digits[i] < that.digits[i])
 			return true;
@@ -526,8 +527,8 @@ Z.prototype.lt = function(that) {
 }
 Z.prototype.eq = function(that) {
 	that = new Z(that);
-	if(this.digits.length != that.digits.length) return false;
 	if(this.sign != that.sign) return false;
+	if(this.digits.length != that.digits.length) return false;
 	for(var i = 0; i < this.length; i++) {
 		if(this.digits[i] != that.digits[i])
 			return false;
