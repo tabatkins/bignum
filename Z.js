@@ -251,6 +251,7 @@ Z.prototype.mul = function(that) {
 			// I have enough wiggle room that 6 or 7 additions can be done without normalizing.
 			if(thatIndex%6 == 0) this._normalize();
 		}
+		this._normalize();
 	} else {
 		// Karatsuba algorithm
 		var chunkLength = Math.ceil(thisLength > thatLength ? thisLength/2 : thatLength/2);
