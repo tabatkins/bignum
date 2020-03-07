@@ -395,7 +395,7 @@ Z.powmod = function(a,b,c) {
 }
 Z.prototype.divmod = function(divisor, remainderPositive) {
 	if(Z.isZero(divisor)) throw "Division by 0 is not allowed.";
-	if(this.isZero()) return [this, 0];
+	if(this.isZero()) return [this, Z(0)];
 	if(Z._singleDigit(divisor)) {
 		divisor = Z._singleDigit(divisor);
 		if(this._singleDigit()) {
