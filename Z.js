@@ -303,43 +303,33 @@ export class Z {
 		return this;
 	}
 
-	divmod(divisor, modOrRem="rem") {
+	divmod(divisor) {
 		if(Z.isZero(divisor)) throw "Division by 0 is not allowed.";
 		if(this.isZero()) return [this, new Z(0)];
 		if(singleDigit(divisor)) {
 			divisor = singleDigit(divisor);
 			var dividend;
 			if(dividend = singleDigit(this)) {
-				if(modOrRem == "rem") return [this.adopt(Math.trunc(dividend/divisor)), new Z(dividend % divisor)];
-				else return [this.adopt(Math.floor(dividend/divisor)), new Z(((dividend % divisor)+divisor)%divisor)];
+				return [this.adopt(Math.trunc(dividend/divisor)), new Z(dividend % divisor)];
 			}
-			var mod = 0;
+			var remainder = 0;
 			for(var i = this.length-1; i >= 0; i--) {
-				var digit = this._digits[i] + mod * Z._innerBase;
-				mod = digit % divisor;
-				this._digits[i] = Math.floor(digit / divisor);
+				remainder = this._digits[i] + remainder * Z._innerBase;
+				this._digits[i] = Math.trunc(remainder / divisor);
+				remainder = remainder % divisor;
 			}
-			if(mod < 0 && remainderPositive == "positive") mod += divisor;
-			return [this._normalize(), new Z(mod)];
+			return [this._normalize(), new Z(remainder).mul(this.sign)];
 		} else {
+			// Do the same thing as the above, but with all Zs.
 			divisor = Z.lift(divisor);
-			remainder = new Z(0);
+			var remainder = new Z(0);
 			for(var i = this._digits.length -1; i >= 0; i--) {
-				var digit = this._digits[i];
-				remainder._digits.unshift(digit);
-				if(remainder.lt(divisor)) {
-					// Fast-path, since this'll be common and it's slow to find via binary-search.
-					var factor = 0;
-				} else {
-					var factor = _divmodFindFactor(divisor, remainder, 1, Z._innerBase-1);
-				}
-				this._digits[i] = factor;
-				remainder.sub(new Z(factor).mul(divisor)); // replace with mod later
+				// aka multiply remainder by innerBase, add current digit
+				remainder._digits.unshift(this._digits[i]);
+				var [newDigit, remainder] = _truncDiv(remainder, divisor);
+				this._digits[i] = newDigit;
 			}
-			this._normalize();
 			remainder.sign = this.sign;
-			this.sign *= divisor.sign;
-			if(remainder.isNeg() && remainderPositive == "positive") remainder.add(divisor);
 			return [this._normalize(), remainder];
 		}
 	}
@@ -485,19 +475,40 @@ export class Z {
 	}
 }
 
-function _divmodFindFactor(factor1, product, low, high) {
-	// Binary search to find largest n that satisfies `factor1 * n <= product`
-	while(true) {
+function _truncDiv(dividend, divisor) {
+	// Binary search to find trunc(dividend/divisor),
+	// where both are Zs,
+	// and dividend is no more than innerBase*divisor
+	var dividendSign = dividend.sign;
+	dividend.sign = 1;
+	var divisorSign = divisor.sign;
+	divisor.sign = 1;
+	if(dividend.lt(divisor)) {
+		dividend.sign = dividendSign;
+		divisor.sign = divisorSign;
+		return [0, dividend.clone()];
+	}
+	let low = 1;
+	let high = Z._innerBase - 1;
+	let rem = new Z(0);
+	let candidateProduct = new Z(0);
+	var loops = 100;
+	while(loops-->0) {
 		var n = Math.ceil((low+high)/2);
-		var candidateProduct = Z.mul(factor1, n);
-		if(candidateProduct.gt(product)) {
+		candidateProduct = Z.mul(divisor, n);
+		if(candidateProduct.gt(dividend)) {
 			high = n-1; continue;
-		} else if(Z.add(candidateProduct, factor1).gt(product)) {
-			return n;
+		}
+		rem = Z.sub(dividend, candidateProduct);
+		if(rem.lt(divisor)) {
+			dividend.sign = dividendSign;
+			divisor.sign = divisorSign;
+			return [n*dividendSign*divisorSign, rem.mul(dividendSign)];
 		} else {
 			low = n+1; continue;
 		}
 	}
+	throw new Error("whoops infinite loop")
 }
 
 function _pow2(exp) {
