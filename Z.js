@@ -463,9 +463,7 @@ export class Z {
 		var num = this.clone();
 		var digits = [];
 		do {
-			var result = num.divmod(base);
-			digits.push(singleDigit(result[1]));
-			num = result[0];
+			digits.push(singleDigit(num.divmod(base)[1]));
 		} while(!num.isZero());
 		return digits.reverse();
 	}
