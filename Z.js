@@ -458,11 +458,13 @@ export class Z {
 
 	digits(base) {
 		base = Math.floor(base || this.base);
-		var num = new Z(this);
+		if(base < 2) throw new TypeError("Can't find digits in a base < 2; got "+base);
+		if(base > Math.MAX_SAFE_INTEGER) throw new TypeError("Base is too large.");
+		var num = this.clone();
 		var digits = [];
 		do {
 			var result = num.divmod(base);
-			digits.push(result[1]);
+			digits.push(singleDigit(result[1]));
 			num = result[0];
 		} while(!num.isZero());
 		return digits.reverse();
