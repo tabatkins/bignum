@@ -4,10 +4,9 @@
 <script src="primes.js"></script>
 <script src="Z.js"></script>
 <script>
-function time(func/*, args*/) {
-	var args = [].slice.call(arguments,1);
+function time(func, ...args) {
 	var start = +new Date;
-	var answer = func.apply(undefined, args);
+	var answer = func(...args);
 	var end = +new Date;
 	if(answer !== undefined) console.log(answer);
 	return end-start;
