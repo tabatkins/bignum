@@ -146,6 +146,11 @@ export class Z {
 		return this;
 	}
 
+	abs() {
+		this.sign = 1;
+		return this;
+	}
+
 	mul(that) {
 		// Fast-path special cases.
 		if(this.isZero()) return this;
@@ -627,6 +632,9 @@ Z.sub = function(a,b) {
 }
 Z.negate = function(a) {
 	return new Z(a).negate();
+}
+Z.abs = function(a) {
+	return new Z(a).abs();
 }
 Z.mul = function(a,b) {
 	return new Z(a).mul(b);
