@@ -214,7 +214,7 @@ export class Z {
 			if(digit == 1) return this; // 1^n = 1
 			// Power of 2 fast-paths
 			for(var i = 1; i < 25; i++) {
-				if(digit == Math.pow(2,i) && expDigit*i <= Number.MAX_SAFE_INTEGER) return this.adopt(Z._pow2(expDigit*i));
+				if(digit == Math.pow(2,i) && expDigit*i <= Number.MAX_SAFE_INTEGER) return this.adopt(_pow2(expDigit*i));
 			}
 			// Computable within JS num limits (answer is less than 2^53)
 			if(	(digit == 3 && expDigit <= 33) ||
@@ -245,17 +245,6 @@ export class Z {
 			if(bitPattern[i] == 1) this.mul(originalBase);
 		}
 		return this;
-	}
-
-	_pow2(exp) {
-		// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
-		var n = new Z(0);
-		while(exp >= 25) {
-			n._digits.push(0);
-			exp -= 25; // innerBase exponent
-		}
-		n._digits.push(Math.pow(2, exp));
-		return n;
 	}
 
 	square() {
@@ -510,6 +499,17 @@ function _divmodFindFactor(factor1, product, low, high) {
 		}
 	}
 }
+
+function _pow2(exp) {
+		// Quick 2^n - this assumes that the innerBase is a power of 2 (specifically, 2^25).
+		var n = new Z(0);
+		while(exp >= 25) {
+			n._digits.push(0);
+			exp -= 25; // innerBase exponent
+		}
+		n._digits.push(Math.pow(2, exp));
+		return n;
+	}
 
 function isNumber(x) {
 	return x instanceof Number || (typeof x) == "number";
