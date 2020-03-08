@@ -5,7 +5,7 @@ export class Z {
 		this._digits = [];
 		if(!num) return this;
 
-		if(isNumber(a)) {
+		if(isNumber(num)) {
 			return Z._fromNum(num, this);
 		} else if(typeof num == "string" || num instanceof String) {
 			return Z._fromString(num, base, this);
