@@ -5,7 +5,7 @@ export class Z {
 		this._digits = [];
 		if(!num) return this;
 
-		if(typeof num == "number" || num instanceof Number) {
+		if(isNumber(a)) {
 			return Z._fromNum(num, this);
 		} else if(typeof num == "string" || num instanceof String) {
 			return Z._fromString(num, base, this);
@@ -516,6 +516,10 @@ function _divmodFindFactor(factor1, product, low, high) {
 	}
 }
 
+function isNumber(x) {
+	return x instanceof Number || typeof x == "number";
+}
+
 
 Z.of = function(num) {
 	return new Z(num);
@@ -589,7 +593,7 @@ Z._fromDigits = function(digits) {
 Z.innerBase = Math.pow(2, 25);
 Z.defaultBase = 10;
 Z.sign = function(a) {
-	if(a instanceof Number || typeof a == "number") {
+	if(isNumber(a)) {
 		if(a < 0) return -1;
 		if(a > 0) return 1;
 		return 0;
@@ -641,26 +645,26 @@ Z.ge = function(a,b) { return Z.lift(a).ge(b); }
 Z.eq = function(a,b) { return Z.lift(a).eq(b); }
 Z.ne = function(a,b) { return Z.lift(a).ne(b); }
 Z.isZero = function(a) {
-	if(a instanceof Number || typeof a == "number") return a == 0;
+	if(isNumber(a)) return a == 0;
 	return Z.lift(a).isZero();
 }
 Z._singleDigit = function(a, allowNegative) {
-	if((a instanceof Number || typeof a == "number") && a < Z.innerBase) {
+	if(isNumber(a) && a < Z.innerBase) {
 		if(a > 0) return a;
 		if(allowNegative == "allow-negative" && a > -Z.innerBase) return a;
 	}
 	return Z.lift(a)._singleDigit();
 }
 Z.toNum = function(a) {
-	if((a instanceof Number || typeof a == "number") && a >= -Number.MAX_SAFE_INTEGER && a <= Number.MAX_SAFE_INTEGER) return a;
+	if(isNumber(a) && a >= -Number.MAX_SAFE_INTEGER && a <= Number.MAX_SAFE_INTEGER) return a;
 	return Z.lift(a).toNum();
 }
 Z.isPos = function(a) {
-	if(a instanceof Number || typeof a == "number") return a > 0;
+	if(isNumber(a)) return a > 0;
 	return Z.lift(a).isPos();
 }
 Z.isNeg = function(a) {
-	if(a instanceof Number || typeof a == "number") return a < 0;
+	if(isNumber(a)) return a < 0;
 	return Z.lift(a).isNeg();
 }
 Z.adopt = function(a,b) {
@@ -670,6 +674,6 @@ Z.digits = function(a, base) {
 	return Z.lift(a).digits(base);
 }
 Z.toString = function(a, base) {
-	if(a instanceof Number || typeof a == "number") return a.toString(base);
+	if(isNumber(a)) return a.toString(base);
 	return Z.lift(a).toString(base);
 }
