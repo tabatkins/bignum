@@ -56,7 +56,7 @@ export class Z {
 		if(Z.isZero(that)) return this;
 		if(this.isZero()) return this.adopt(that);
 		var digit;
-		if(digit = Z._singleDigit(that, "allow-negative")) {
+		if(digit = singleDigit(that)) {
 			if(this.sign == 1) this._digits[0] += digit;
 			else this._digits[0] -= digit;
 			if(this._digits[0] < 0 || this._digits[0] >= Z._innerBase) this._normalize();
@@ -98,7 +98,7 @@ export class Z {
 		if(Z.isZero(that)) return this;
 		if(this.isZero()) return this.adopt(that).negate();
 		var digit;
-		if(digit = Z._singleDigit(that, "allow-negative")) {
+		if(digit = singleDigit(that)) {
 			if(this.sign == 1) this._digits[0] -= digit;
 			else this._digits[0] += digit;
 			if(this._digits[0] < 0 || this._digits[0] >= Z._innerBase) this._normalize();
@@ -151,7 +151,7 @@ export class Z {
 		if(this.isZero()) return this;
 		if(Z.isZero(that)) { this._digits = []; return this; }
 		var thisDigit, thatDigit;
-		if(thatDigit = Z._singleDigit(that, "allow-negative")) {
+		if(thatDigit = singleDigit(that)) {
 			for(var i = 0; i < this._digits.length; i++)
 				this._digits[i] *= thatDigit;
 			return this._normalize();
@@ -210,7 +210,7 @@ export class Z {
 		if(expDigit == 1) return this;
 		if(expDigit == 2) return this.square();
 		var digit;
-		if(expDigit && (digit = this._singleDigit())) {
+		if(expDigit && (digit = posSingleDigit(this))) {
 			if(digit == 1) return this; // 1^n = 1
 			// Power of 2 fast-paths
 			for(var i = 1; i < 25; i++) {
@@ -262,7 +262,7 @@ export class Z {
 		if(this.isZero()) return this;
 		this.sign = 1;  // Squaring always gives a positive number.
 		var digit;
-		if(digit = this._singleDigit()) {
+		if(digit = singleDigit(this)) {
 			this._digits[0] *= this._digits[0];
 			if(this._digits[0] >= Z._innerBase) this._normalize();
 			return this;
@@ -295,7 +295,7 @@ export class Z {
 		if(this.isZero()) return this;
 		if(Z.toNum(exponent) == 1) return this.mod(modulus);
 		var digit;
-		if(digit = Z._singleDigit(modulus)) {
+		if(digit = posSingleDigit(modulus)) {
 			var base = this.mod(digit)._digits[0];
 			var accum = base;
 			var bitPattern = Z.digits(exponent, 2);
@@ -317,10 +317,10 @@ export class Z {
 	divmod(divisor, modOrRem="rem") {
 		if(Z.isZero(divisor)) throw "Division by 0 is not allowed.";
 		if(this.isZero()) return [this, new Z(0)];
-		if(Z._singleDigit(divisor, "allow-negative")) {
-			divisor = Z._singleDigit(divisor, "allow-negative");
-			if(this._singleDigit("allow-negative")) {
-				var dividend = this._singleDigit("allow-negative");
+		if(singleDigit(divisor)) {
+			divisor = singleDigit(divisor);
+			var dividend;
+			if(dividend = singleDigit(this)) {
 				if(modOrRem == "rem") return [this.adopt(Math.trunc(dividend/divisor)), new Z(dividend % divisor)];
 				else return [this.adopt(Math.floor(dividend/divisor)), new Z(((dividend % divisor)+divisor)%divisor)];
 			}
@@ -363,7 +363,7 @@ export class Z {
 		if(Z.isZero(modulus)) throw "Division by 0 is not allowed.";
 		if(this.isZero()) return this;
 		var digit;
-		if(digit = Z._singleDigit(modulus)) {
+		if(digit = posSingleDigit(modulus)) {
 			if(this.toNum()) return this.adopt(this.toNum() % digit);
 			accumulatedBaseMod = 1;
 			var sum = 0;
@@ -386,7 +386,7 @@ export class Z {
 
 	factorize() {
 		let digit;
-		if(digit = this._singleDigit()) {
+		if(digit = posSingleDigit(this)) {
 			return Primes.factorize(digit);
 		}
 		let factors = new Map();
@@ -400,7 +400,7 @@ export class Z {
 			}
 			if(count.isPos())
 				factors.set(new Z(p), count);
-			if(num._singleDigit() === 1)
+			if(singleDigit(num) === 1)
 				return factors;
 		}
 	}
@@ -443,23 +443,12 @@ export class Z {
 		return true;
 	}
 
-	_singleDigit(allowNegative) {
-		// Many functions can be optimized for single-digit Zs.
-		// If the Z is single-digit, returns that digit. This is a truthy value.
-		// Note, this returns false for 0; use isZero() instead.
-		if(this._digits.length == 1) {
-			if(allowNegative === "allow-negative") return this._digits[0] * this.sign;
-			if(this.sign == 1) return this._digits[0];
-		}
-		return false;
-	}
-
 	toNum() {
 		// Converts the Z into a JS num, if possible; otherwise returns false.
-		if(this.isZero()) return 0;
-		if(this._singleDigit("allow-negative")) return this._singleDigit("allow-negative");
-		if(this._digits.length == 2) return (this._digits[0] + this._digits[1]*Z._innerBase)*this.sign;
-		if(this._digits.length == 3 && this._digits[3] < 8)
+		if(this.length == 0) return 0;
+		if(this.length == 1) return this._digits[0] * this.sign;
+		if(this.length == 2) return (this._digits[0] + this._digits[1]*Z._innerBase)*this.sign;
+		if(this.length == 3 && this._digits[3] < 8)
 			return (this._digits[0] + this._digits[1]*Z._innerBase + this._digits[2]*Z._innerBase*Z._innerBase)*this.sign;
 		return false;
 	}
@@ -525,6 +514,26 @@ function _divmodFindFactor(factor1, product, low, high) {
 function isNumber(x) {
 	return x instanceof Number || (typeof x) == "number";
 }
+
+function singleDigit(a) {
+	// Returns a JS number if arg fits within or contains a single Z digit.
+	if(isNumber(a) && Math.abs(a) < Z._innerBase) {
+		return a;
+	}
+	if(a instanceof Z) {
+		if(a.length == 0) return 0;
+		if(a.length == 1) return a._digits[0] * a._sign;
+	}
+	return false;
+}
+function posSingleDigit(a) {
+	// Same as digit(), but only returns if the value is positive.
+	// (useful for some algorithms)
+	const result = singleDigit(a);
+	if(a >= 0) return a;
+	return false;
+}
+
 
 
 Z.of = function(num) {
@@ -646,13 +655,6 @@ Z.ne = function(a,b) { return Z.lift(a).ne(b); }
 Z.isZero = function(a) {
 	if(isNumber(a)) return a == 0;
 	return Z.lift(a).isZero();
-}
-Z._singleDigit = function(a, allowNegative) {
-	if(isNumber(a) && a < Z._innerBase) {
-		if(a > 0) return a;
-		if(allowNegative == "allow-negative" && a > -Z._innerBase) return a;
-	}
-	return Z.lift(a)._singleDigit();
 }
 Z.toNum = function(a) {
 	if(isNumber(a) && a >= -Number.MAX_SAFE_INTEGER && a <= Number.MAX_SAFE_INTEGER) return a;
