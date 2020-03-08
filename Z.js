@@ -26,11 +26,17 @@ export class Z {
 
 	adopt(that) {
 		// Mutates this to have the same value as that.
-		that = Z.lift(that);
-		this._digits = that._digits;
-		this.sign = that.sign;
-		this.base = that.base;
-		return this;
+		if(isNumber(that)) {
+			return Z._fromNum(that, this);
+		}
+		if(that instanceof Z) {
+			this._digits = that._digits;
+			this.sign = that.sign;
+			this.base = that.base;
+			return this;
+		}
+		console.log(that);
+		throw new TypeError("Don't know how to adopt the value.", that);
 	}
 
 	get length() {
