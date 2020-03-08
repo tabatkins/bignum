@@ -53,7 +53,7 @@ export class Z {
 		if(digit = Z._singleDigit(that, "allow-negative")) {
 			if(this.sign == 1) this._digits[0] += digit;
 			else this._digits[0] -= digit;
-			if(this._digits[0] < 0 || this._digits[0] >= Z.innerBase) this._normalize();
+			if(this._digits[0] < 0 || this._digits[0] >= Z._innerBase) this._normalize();
 			return this;
 		}
 		return this._add(Z.lift(that));
@@ -95,7 +95,7 @@ export class Z {
 		if(digit = Z._singleDigit(that, "allow-negative")) {
 			if(this.sign == 1) this._digits[0] -= digit;
 			else this._digits[0] += digit;
-			if(this._digits[0] < 0 || this._digits[0] >= Z.innerBase) this._normalize();
+			if(this._digits[0] < 0 || this._digits[0] >= Z._innerBase) this._normalize();
 			return this;
 		}
 		// General case
@@ -110,20 +110,20 @@ export class Z {
 		var carry = 0;
 		for(var i = 0; i < this.length; i++) {
 			var digit = this._digits[i] + carry;
-			carry = Math.floor(digit / Z.innerBase);
-			this._digits[i] = (digit % Z.innerBase + Z.innerBase) % Z.innerBase;
+			carry = Math.floor(digit / Z._innerBase);
+			this._digits[i] = (digit % Z._innerBase + Z._innerBase) % Z._innerBase;
 		}
 		// If final carry is negative, entire number was negative.
 		if(carry < 0) {
 			this.sign *= -1;
 			carry = -carry - 1;
 			for(var i = 0; i < this._digits.length; i++)
-				this._digits[i] = Z.innerBase - this._digits[i] + (i == 0 ? 0 : -1);
+				this._digits[i] = Z._innerBase - this._digits[i] + (i == 0 ? 0 : -1);
 		}
 		// If there's any final carry, add more digits.
 		while(carry > 0) {
-			this._digits.push(carry % Z.innerBase);
-			carry = Math.floor(carry / Z.innerBase);
+			this._digits.push(carry % Z._innerBase);
+			carry = Math.floor(carry / Z._innerBase);
 		}
 		// Drop any leading zeros.
 		for(var i = this._digits.length-1; i>=0; i--) {
@@ -258,7 +258,7 @@ export class Z {
 		var digit;
 		if(digit = this._singleDigit()) {
 			this._digits[0] *= this._digits[0];
-			if(this._digits[0] >= Z.innerBase) this._normalize();
+			if(this._digits[0] >= Z._innerBase) this._normalize();
 			return this;
 		}
 		if(this._digits.length < 10) {
@@ -320,7 +320,7 @@ export class Z {
 			}
 			var mod = 0;
 			for(var i = this.length-1; i >= 0; i--) {
-				var digit = this._digits[i] + mod * Z.innerBase;
+				var digit = this._digits[i] + mod * Z._innerBase;
 				mod = digit % divisor;
 				this._digits[i] = Math.floor(digit / divisor);
 			}
@@ -336,7 +336,7 @@ export class Z {
 					// Fast-path, since this'll be common and it's slow to find via binary-search.
 					var factor = 0;
 				} else {
-					var factor = _divmodFindFactor(divisor, remainder, 1, Z.innerBase-1);
+					var factor = _divmodFindFactor(divisor, remainder, 1, Z._innerBase-1);
 				}
 				this._digits[i] = factor;
 				remainder.sub(new Z(factor).mul(divisor)); // replace with mod later
@@ -363,7 +363,7 @@ export class Z {
 			var sum = 0;
 			for(var i = 0; i < this._digits.length; i++) {
 				sum = (this._digits[i]%digit * accumulatedBaseMod + sum) % digit;
-				accumulatedBaseMod = accumulatedBaseMod * Z.innerBase % digit;
+				accumulatedBaseMod = accumulatedBaseMod * Z._innerBase % digit;
 			}
 			this._digits[0] = sum;
 			this._digits.length = 1;
@@ -452,9 +452,9 @@ export class Z {
 		// Converts the Z into a JS num, if possible; otherwise returns false.
 		if(this.isZero()) return 0;
 		if(this._singleDigit("allow-negative")) return this._singleDigit("allow-negative");
-		if(this._digits.length == 2) return (this._digits[0] + this._digits[1]*Z.innerBase)*this.sign;
+		if(this._digits.length == 2) return (this._digits[0] + this._digits[1]*Z._innerBase)*this.sign;
 		if(this._digits.length == 3 && this._digits[3] < 8)
-			return (this._digits[0] + this._digits[1]*Z.innerBase + this._digits[2]*Z.innerBase*Z.innerBase)*this.sign;
+			return (this._digits[0] + this._digits[1]*Z._innerBase + this._digits[2]*Z._innerBase*Z._innerBase)*this.sign;
 		return false;
 	}
 
@@ -533,14 +533,14 @@ Z._fromNum = function(num, z) {
 		num *= -1;
 		z.sign = -1;
 	}
-	if(num < Z.innerBase) {
+	if(num < Z._innerBase) {
 		z._digits = [num];
 		return z;
 	} else if(num < Number.MAX_SAFE_INTEGER) {
 		z._digits = [];
 		while(num > 0) {
-			z._digits.push(num % Z.innerBase);
-			num = Math.floor(num / Z.innerBase);
+			z._digits.push(num % Z._innerBase);
+			num = Math.floor(num / Z._innerBase);
 		}
 		return z;
 	}
@@ -568,7 +568,7 @@ Z._fromArray = function(num, base, sign) {
 	// for better efficiency (less steps later).
 	// Then, just use Z math to do the conversion for me;
 	// nothing particularly clever going on here.
-	var size = Math.floor(Math.log(Z.innerBase) / Math.log(base));
+	var size = Math.floor(Math.log(Z._innerBase) / Math.log(base));
 	var bigDigits = Math.ceil(digits.length / size);
 	var pieces = [];
 	for(var i = 0; i < bigDigits; i++) {
@@ -590,7 +590,7 @@ Z._fromDigits = function(digits) {
 	result._digits = digits;
 	return result;
 }
-Z.innerBase = Math.pow(2, 25);
+Z._innerBase = Math.pow(2, 25);
 Z.defaultBase = 10;
 Z.sign = function(a) {
 	if(isNumber(a)) {
@@ -649,9 +649,9 @@ Z.isZero = function(a) {
 	return Z.lift(a).isZero();
 }
 Z._singleDigit = function(a, allowNegative) {
-	if(isNumber(a) && a < Z.innerBase) {
+	if(isNumber(a) && a < Z._innerBase) {
 		if(a > 0) return a;
-		if(allowNegative == "allow-negative" && a > -Z.innerBase) return a;
+		if(allowNegative == "allow-negative" && a > -Z._innerBase) return a;
 	}
 	return Z.lift(a)._singleDigit();
 }
