@@ -475,7 +475,7 @@ export class Z {
 		if(base < 2 || base > 36)
 			throw TypeError("Can only toString a Z when 2 <= base <= 36.");
 		var s;
-		if(s = this._singleDigit("allow-negative")) return s;
+		if(s = singleDigit(this)) return s;
 		var result = this.digits(base).map(function(x){return x.toNum().toString(base);}).join('');
 		if(this.sign == -1)
 			result = "-" + result;
