@@ -529,22 +529,15 @@ Z.lift = function(num) {
 	return new Z(num);
 }
 Z._fromNum = function(num, z) {
-	if(num < 0) {
-		num *= -1;
-		z.sign = -1;
+	if(num > Number.MAX_SAFE_INTEGER) throw TypeError("Number is too large to reliably generate a Z from.");
+	z.sign = Math.sign(num);
+	num = Math.abs(num);
+	z._digits = [];
+	while(num > 0) {
+		z._digits.push(num % Z._innerBase);
+		num = Math.floor(num / Z._innerBase);
 	}
-	if(num < Z._innerBase) {
-		z._digits = [num];
-		return z;
-	} else if(num < Number.MAX_SAFE_INTEGER) {
-		z._digits = [];
-		while(num > 0) {
-			z._digits.push(num % Z._innerBase);
-			num = Math.floor(num / Z._innerBase);
-		}
-		return z;
-	}
-	throw TypeError("Number is too large to reliably generate a Z from.");
+	return z;
 }
 Z._fromString = function(num, base, z) {
 	var sign = 1;
