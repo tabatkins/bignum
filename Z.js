@@ -517,7 +517,7 @@ function _divmodFindFactor(factor1, product, low, high) {
 }
 
 function isNumber(x) {
-	return x instanceof Number || typeof x == "number";
+	return x instanceof Number || (typeof x) == "number";
 }
 
 
