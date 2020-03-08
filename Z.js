@@ -1,4 +1,3 @@
-Math.MAX_INT = Math.pow(2,53);
 function Z(num, base) {
 	if(!(this instanceof Z)) return new Z(num, base);
 	if(base === undefined) base = num.base || Z.defaultBase;
@@ -36,7 +35,7 @@ Z._fromNum = function(num, z) {
 	if(num < Z.innerBase) {
 		z.digits = [num];
 		return z;
-	} else if(num < Math.MAX_INT) {
+	} else if(num < Number.MAX_SAFE_INTEGER) {
 		z.digits = [];
 		while(num > 0) {
 			z.digits.push(num % Z.innerBase);
@@ -217,7 +216,7 @@ Z.prototype.negate = function() {
 	this.sign *= -1;
 	return this;
 }
-Z.negate = function(a) { 
+Z.negate = function(a) {
 	return Z(a).negate();
 }
 Z.prototype.mul = function(that) {
@@ -289,7 +288,7 @@ Z.prototype.pow = function(exp) {
 		if(digit == 1) return this; // 1^n = 1
 		// Power of 2 fast-paths
 		for(var i = 1; i < 25; i++) {
-			if(digit == Math.pow(2,i) && expDigit*i <= Math.MAX_INT) return this.adopt(Z._pow2(expDigit*i));
+			if(digit == Math.pow(2,i) && expDigit*i <= Number.MAX_SAFE_INTEGER) return this.adopt(Z._pow2(expDigit*i));
 		}
 		// Computable within JS num limits (answer is less than 2^53)
 		if(	(digit == 3 && expDigit <= 33) ||
@@ -486,7 +485,7 @@ Z.mod = function(a,b,remainderPositive) {
 }
 Z.fact = function(num) {
 	num = Z.toNum(num);
-	if(num === false) throw "Keep your factorials less than Math.MAX_INT, please."
+	if(num === false) throw "Keep your factorials less than Number.MAX_SAFE_INTEGER, please."
 	var product = Z(1);
 	for(var i = 2; i <= num; i++)
 		product.mul(i);
@@ -568,9 +567,9 @@ Z.prototype._singleDigit = function(allowNegative) {
 }
 Z._singleDigit = function(a, allowNegative) {
 	if((a instanceof Number || typeof a == "number") && a < Z.innerBase) {
-		if(a > 0) return a;	
+		if(a > 0) return a;
 		if(allowNegative == "allow-negative" && a > -Z.innerBase) return a;
-	} 
+	}
 	return Z.lift(a)._singleDigit();
 }
 Z.prototype.toNum = function() {
@@ -583,7 +582,7 @@ Z.prototype.toNum = function() {
 	return false;
 }
 Z.toNum = function(a) {
-	if((a instanceof Number || typeof a == "number") && a >= -Math.MAX_INT && a <= Math.MAX_INT) return a;
+	if((a instanceof Number || typeof a == "number") && a >= -Number.MAX_SAFE_INTEGER && a <= Number.MAX_SAFE_INTEGER) return a;
 	return Z.lift(a).toNum();
 }
 Z.prototype.isPos = function() {
