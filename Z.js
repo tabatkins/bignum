@@ -115,7 +115,7 @@ export class Z {
 		// Put every digit back into the range [0, 2^25)
 		var carry = 0;
 		for(var i = 0; i < this.length; i++) {
-			var digit = this._digits[i] + carry;
+			var digit = (this._digits[i]||0) + carry;
 			carry = Math.floor(digit / Z._innerBase);
 			this._digits[i] = (digit % Z._innerBase + Z._innerBase) % Z._innerBase;
 		}
@@ -177,7 +177,7 @@ export class Z {
 			for(var thatIndex = 1; thatIndex < thatLength; thatIndex++) {
 				var thatDigit = that._digits[thatIndex];
 				for(var thisIndex = 0; thisIndex < thisLength; thisIndex++) {
-					this._digits[thisIndex+thatIndex] = (this._digits[thisIndex+thatIndex]||0) + thisDigits[thisIndex] * thatDigit;
+					this._digits[thisIndex+thatIndex] = (this._digits[thisIndex+thatIndex]||0) + (thisDigits[thisIndex]||0) * thatDigit;
 				}
 				// I have enough wiggle room that 6 or 7 additions can be done without normalizing.
 				if(thatIndex%6 == 0) this._normalize();
